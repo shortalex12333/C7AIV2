@@ -1,9 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Focus styles for accessibility */
+*:focus {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
 }
 
 body {
@@ -12,9 +25,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #000000;
+  background-color: #090a0c;
   color: #ffffff;
   overflow-x: hidden;
+  font-weight: 400;
 }
 
 .App {
