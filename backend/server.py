@@ -55,11 +55,11 @@ class VoiceChatRequest(BaseModel):
     audioBlob: str  # Base64 encoded audio
     sessionID: Optional[str] = None
 
-# Webhook URLs
-SIGNUP_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/2436613e-9b36-44b7-9b73-12aca8e8810a"
-SIGNIN_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/ad4358c1-46b5-4f68-8cb0-2ba8c4480b7b"
-DISPLAY_NAME_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/4f064d7b-5902-48c1-953f-dc1023112208"
-VOICE_CHAT_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/347748db-be03-4fa0-bb02-4e19cb87a5cd"
+# Webhook URLs - Production
+SIGNUP_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook/auth/sign-up"
+SIGNIN_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook/auth/sign-in"
+DISPLAY_NAME_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook/user/display-name"
+VOICE_CHAT_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook/voice-chat"
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
