@@ -232,14 +232,23 @@ const Dashboard = () => {
 
               {/* Quick Actions */}
               <div className="space-y-4 mb-8">
-                <button className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-120"
+                >
                   <ChartBarIcon className="w-5 h-5 text-teal-400" />
                   <span>Performance Analytics</span>
-                </button>
-                <button className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
+                </motion.button>
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/settings')}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-120"
+                >
                   <Cog6ToothIcon className="w-5 h-5 text-gray-400" />
                   <span>Settings</span>
-                </button>
+                </motion.button>
               </div>
 
               {/* Logout */}
