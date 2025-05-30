@@ -215,10 +215,10 @@ const LandingPage = () => {
               Join 1000+ founders who've already transformed their momentum.
             </p>
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/auth')}
-              className="bg-white text-black px-8 py-4 rounded-full font-bold text-lg btn-hover-scale"
+              className="btn-bull-red text-white px-8 py-4 rounded-full font-bold text-lg btn-hover-scale"
             >
               Start Free Today
             </motion.button>
