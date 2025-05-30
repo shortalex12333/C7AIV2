@@ -79,31 +79,38 @@ const Dashboard = () => {
     }
   };
 
-  const sendAudioToAPI = async (audioBlob) => {
+  const sendAudioToAPI = async (blob) => {
     try {
-      // Create FormData with the audio blob
+      // Build FormData correctly
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'audio.webm');
-      formData.append('sessionID', sessionID.current);
+      formData.append('audio', blob, 'audio.webm');
+      formData.append('sessionID', sessionID.current); // use conversation UUID
 
-      // Set up headers with correct Content-Type and Authorization
+      // Set exact headers
       const headers = {
         'Content-Type': 'audio/webm;codecs=opus',
+        'Authorization': `Bearer ${user.token}`,
       };
 
-      // Include JWT Authorization header
-      if (user.token) {
-        headers['Authorization'] = `Bearer ${user.token}`;
-      }
+      // Debug log before sending
+      console.log('Sending audio to voice-chat webhook', { 
+        sessionId: sessionID.current, 
+        blob: blob,
+        blobSize: blob.size,
+        blobType: blob.type 
+      });
 
-      // Call production voice-chat webhook directly
+      // Send POST to production webhook
       const response = await axios.post(
         'https://ventruk.app.n8n.cloud/webhook/voice-chat',
         formData,
         { headers }
       );
       
-      if (response.data && response.data.ttsUrl) {
+      // Handle response
+      const { ttsUrl, transcript } = response.data;
+      
+      if (ttsUrl && transcript) {
         // Add user message
         const userMessage = {
           id: Date.now(),
@@ -116,23 +123,23 @@ const Dashboard = () => {
         
         // Play TTS response
         if (audioRef.current) {
-          audioRef.current.src = response.data.ttsUrl;
+          audioRef.current.src = ttsUrl;
           audioRef.current.play().catch(e => console.log('Audio play failed:', e));
         }
         
-        // Add AI response
+        // Add AI response with transcript
         setTimeout(() => {
           const aiMessage = {
             id: Date.now() + 1,
             type: 'ai',
-            content: response.data.transcript || 'Voice response received',
+            content: transcript,
             timestamp: new Date()
           };
           setMessages(prev => [...prev, aiMessage]);
         }, 500);
       }
     } catch (error) {
-      console.error('Error sending audio:', error);
+      console.error('Error sending audio to voice-chat webhook:', error);
       alert('Failed to process voice message. Please try again.');
     } finally {
       setIsProcessing(false);
