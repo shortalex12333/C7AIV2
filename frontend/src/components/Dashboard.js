@@ -281,7 +281,7 @@ const Dashboard = () => {
                 <div className="w-full h-0.5 bg-white"></div>
                 <div className="w-full h-0.5 bg-white"></div>
               </div>
-            </button>
+            </motion.button>
             
             <h1 className="text-xl font-bold">Voice Chat</h1>
             
