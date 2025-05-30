@@ -80,15 +80,12 @@ async def get_status_checks():
 
 @api_router.post("/auth/signup")
 async def signup(user_data: UserSignUp):
-    # TODO: Replace with actual webhook when n8n is configured
-    # For now, return mock successful response to enable testing
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 SIGNUP_WEBHOOK,
                 json=user_data.dict(),
-                headers={"Content-Type": "application/json"},
-                timeout=5.0
+                headers={"Content-Type": "application/json"}
             )
             
             if response.status_code == 201:
@@ -99,22 +96,15 @@ async def signup(user_data: UserSignUp):
                     detail="A user with that email already exists."
                 )
             else:
-                # Webhook returned non-success status
-                logger.warning(f"Signup webhook returned {response.status_code}: {response.text}")
-                # Return mock success response for testing
-                return {
-                    "status": "success",
-                    "userID": str(uuid.uuid4()),
-                    "message": "Account created (mock response - webhook unavailable)"
-                }
-    except httpx.RequestError as e:
-        logger.warning(f"Signup webhook connection failed: {str(e)}")
-        # Return mock success response for testing
-        return {
-            "status": "success", 
-            "userID": str(uuid.uuid4()),
-            "message": "Account created (mock response - webhook unavailable)"
-        }
+                raise HTTPException(
+                    status_code=500,
+                    detail="Signup service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to authentication service"
+        )
 
 @api_router.post("/auth/signin")
 async def signin(user_data: UserSignIn):
