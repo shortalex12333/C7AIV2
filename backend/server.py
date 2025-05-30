@@ -170,23 +170,15 @@ async def voice_chat(data: VoiceChatRequest):
             if response.status_code == 200:
                 return response.json()
             else:
-                logger.warning(f"Voice chat webhook returned {response.status_code}: {response.text}")
-                # Return mock success response for testing
-                return {
-                    "status": "success",
-                    "transcript": "I hear you loud and clear! This is a mock response while we're setting up the voice chat webhook. Your message was received and I'm ready to help you accelerate your goals. (Webhook currently unavailable)",
-                    "ttsUrl": "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA=",
-                    "message": "Voice chat processed (mock response - webhook unavailable)"
-                }
-    except httpx.RequestError as e:
-        logger.warning(f"Voice chat webhook connection failed: {str(e)}")
-        # Return mock success response for testing
-        return {
-            "status": "success", 
-            "transcript": "I hear you loud and clear! This is a mock response while we're setting up the voice chat webhook. Your message was received and I'm ready to help you accelerate your goals. (Webhook currently unavailable)",
-            "ttsUrl": "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA=",
-            "message": "Voice chat processed (mock response - webhook unavailable)"
-        }
+                raise HTTPException(
+                    status_code=500,
+                    detail="Voice chat service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to voice chat service"
+        )
 
 # Include the router in the main app
 app.include_router(api_router)
