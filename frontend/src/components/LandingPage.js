@@ -47,10 +47,10 @@ const LandingPage = () => {
             </motion.div>
             
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/auth')}
-              className="bg-accent-teal hover:bg-teal-600 text-white px-6 py-2 rounded-full font-semibold transition-all duration-200"
+              className="btn-bull-red text-white px-6 py-2 rounded-full font-semibold transition-all duration-120"
             >
               Get Started
             </motion.button>
