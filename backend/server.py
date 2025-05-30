@@ -141,26 +141,21 @@ async def change_display_name(data: DisplayNameChange):
             response = await client.post(
                 DISPLAY_NAME_WEBHOOK,
                 json=data.dict(),
-                headers={"Content-Type": "application/json"},
-                timeout=5.0
+                headers={"Content-Type": "application/json"}
             )
             
             if response.status_code == 200:
                 return response.json()
             else:
-                logger.warning(f"Display name webhook returned {response.status_code}: {response.text}")
-                # Return mock success response for testing
-                return {
-                    "status": "success",
-                    "message": "Display name updated (mock response - webhook unavailable)"
-                }
-    except httpx.RequestError as e:
-        logger.warning(f"Display name webhook connection failed: {str(e)}")
-        # Return mock success response for testing
-        return {
-            "status": "success",
-            "message": "Display name updated (mock response - webhook unavailable)"
-        }
+                raise HTTPException(
+                    status_code=500,
+                    detail="Display name change service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to user service"
+        )
 
 @api_router.post("/voice/chat")
 async def voice_chat(data: VoiceChatRequest):
