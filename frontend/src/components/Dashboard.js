@@ -258,11 +258,13 @@ const Dashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="p-4 border-b border-gray-800">
+        <header className="p-4 border-b border-gray-800/50 glass-effect">
           <div className="flex items-center justify-between">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-800/50 transition-all duration-120"
             >
               <div className="w-6 h-6 flex flex-col justify-center space-y-1">
                 <div className="w-full h-0.5 bg-white"></div>
