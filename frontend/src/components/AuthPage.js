@@ -47,7 +47,12 @@ const AuthPage = () => {
       
       if (response.data) {
         login(response.data);
-        navigate('/dashboard');
+        // Navigate based on flow - signup goes to onboarding, signin goes to dashboard
+        if (isSignUp) {
+          navigate('/onboarding');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (err) {
       if (err.response?.data?.detail) {
