@@ -81,49 +81,56 @@ const Dashboard = () => {
 
   const sendAudioToAPI = async (audioBlob) => {
     try {
-      // Convert audio blob to base64
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Audio = reader.result.split(',')[1];
-        
-        const payload = {
-          userID: user.UserID || user.userID || 'temp_user',
-          audioBlob: base64Audio,
-          sessionID: sessionID.current
-        };
+      // Create FormData with the audio blob
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+      formData.append('sessionID', sessionID.current);
 
-        const response = await axios.post(`${API}/voice/chat`, payload);
+      // Set up headers with correct Content-Type and Authorization
+      const headers = {
+        'Content-Type': 'audio/webm;codecs=opus',
+      };
+
+      // Include JWT Authorization header
+      if (user.token) {
+        headers['Authorization'] = `Bearer ${user.token}`;
+      }
+
+      // Call production voice-chat webhook directly
+      const response = await axios.post(
+        'https://ventruk.app.n8n.cloud/webhook/voice-chat',
+        formData,
+        { headers }
+      );
+      
+      if (response.data && response.data.ttsUrl) {
+        // Add user message
+        const userMessage = {
+          id: Date.now(),
+          type: 'user',
+          content: 'Voice message sent',
+          timestamp: new Date()
+        };
         
-        if (response.data && response.data.ttsUrl) {
-          // Add user message
-          const userMessage = {
-            id: Date.now(),
-            type: 'user',
-            content: 'Voice message sent',
+        setMessages(prev => [...prev, userMessage]);
+        
+        // Play TTS response
+        if (audioRef.current) {
+          audioRef.current.src = response.data.ttsUrl;
+          audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        // Add AI response
+        setTimeout(() => {
+          const aiMessage = {
+            id: Date.now() + 1,
+            type: 'ai',
+            content: response.data.transcript || 'Voice response received',
             timestamp: new Date()
           };
-          
-          setMessages(prev => [...prev, userMessage]);
-          
-          // Play TTS response
-          if (audioRef.current) {
-            audioRef.current.src = response.data.ttsUrl;
-            audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-          }
-          
-          // Add AI response
-          setTimeout(() => {
-            const aiMessage = {
-              id: Date.now() + 1,
-              type: 'ai',
-              content: response.data.transcript || 'Voice response received',
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMessage]);
-          }, 500);
-        }
-      };
-      reader.readAsDataURL(audioBlob);
+          setMessages(prev => [...prev, aiMessage]);
+        }, 500);
+      }
     } catch (error) {
       console.error('Error sending audio:', error);
       alert('Failed to process voice message. Please try again.');
