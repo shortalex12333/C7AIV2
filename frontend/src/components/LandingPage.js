@@ -83,7 +83,7 @@ const LandingPage = () => {
             {/* Main Headline */}
             <motion.h1
               variants={fadeInUp}
-              className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight"
+              className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight text-shadow-premium"
             >
               <span className="hero-text-gradient">Your AI Co-Pilot</span>
               <br />
@@ -97,11 +97,11 @@ const LandingPage = () => {
             {/* Subheadline */}
             <motion.p
               variants={fadeInUp}
-              className="text-xl md:text-2xl text-steel-gray max-w-3xl mx-auto leading-relaxed"
+              className="text-xl md:text-2xl text-steel-gray max-w-3xl mx-auto leading-relaxed font-medium"
             >
               Anticipate, act, and accelerate—before you even think to ask.
               <br />
-              <span className="text-bull-red font-semibold">Doubt ends here.</span>
+              <span className="text-bull-red font-bold text-shadow-premium">Doubt ends here.</span>
             </motion.p>
 
             {/* CTA Section */}
@@ -110,19 +110,19 @@ const LandingPage = () => {
               className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mt-12"
             >
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => navigate('/auth')}
-                className="bg-gradient-to-r from-teal-400 to-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg flex items-center space-x-2 btn-hover-scale"
+                className="btn-bull-red px-8 py-4 rounded-full font-bold text-lg flex items-center space-x-2 btn-hover-scale"
               >
                 <span>Start Your Journey</span>
                 <ChevronRightIcon className="w-5 h-5" />
               </motion.button>
               
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="border border-steel-gray text-white px-8 py-4 rounded-full font-semibold text-lg hover:border-white transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="glass-effect-strong text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition-all duration-120 border-0"
               >
                 Watch Demo
               </motion.button>
