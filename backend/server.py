@@ -1,15 +1,17 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
 import uuid
 from datetime import datetime
-
+import httpx
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -25,7 +27,6 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-
 # Define Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -35,10 +36,35 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+class UserSignUp(BaseModel):
+    email: EmailStr
+    password: str
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+
+class UserSignIn(BaseModel):
+    email: EmailStr
+    password: str
+
+class DisplayNameChange(BaseModel):
+    userID: str
+    displayName: str
+
+class VoiceChatRequest(BaseModel):
+    userID: str
+    audioBlob: str  # Base64 encoded audio
+    sessionID: Optional[str] = None
+
+# Webhook URLs
+SIGNUP_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/2436613e-9b36-44b7-9b73-12aca8e8810a"
+SIGNIN_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/ad4358c1-46b5-4f68-8cb0-2ba8c4480b7b"
+DISPLAY_NAME_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/4f064d7b-5902-48c1-953f-dc1023112208"
+VOICE_CHAT_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook-test/347748db-be03-4fa0-bb02-4e19cb87a5cd"
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Celeste7 AI Voice Chat API"}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
@@ -51,6 +77,108 @@ async def create_status_check(input: StatusCheckCreate):
 async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**status_check) for status_check in status_checks]
+
+@api_router.post("/auth/signup")
+async def signup(user_data: UserSignUp):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                SIGNUP_WEBHOOK,
+                json=user_data.dict(),
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 201:
+                return response.json()
+            elif response.status_code == 409:
+                raise HTTPException(
+                    status_code=409,
+                    detail="A user with that email already exists."
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Signup service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to authentication service"
+        )
+
+@api_router.post("/auth/signin")
+async def signin(user_data: UserSignIn):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                SIGNIN_WEBHOOK,
+                json=user_data.dict(),
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Email or password is incorrect."
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Signin service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to authentication service"
+        )
+
+@api_router.post("/user/display-name")
+async def change_display_name(data: DisplayNameChange):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                DISPLAY_NAME_WEBHOOK,
+                json=data.dict(),
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Display name change service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to user service"
+        )
+
+@api_router.post("/voice/chat")
+async def voice_chat(data: VoiceChatRequest):
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                VOICE_CHAT_WEBHOOK,
+                json=data.dict(),
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Voice chat service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to voice chat service"
+        )
 
 # Include the router in the main app
 app.include_router(api_router)
