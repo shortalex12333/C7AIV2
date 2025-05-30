@@ -94,7 +94,7 @@ const Dashboard = () => {
 
         const response = await axios.post(`${API}/voice/chat`, payload);
         
-        if (response.data && response.data.status === 'success') {
+        if (response.data && response.data.ttsUrl) {
           // Add user message
           const userMessage = {
             id: Date.now(),
@@ -105,19 +105,13 @@ const Dashboard = () => {
           
           setMessages(prev => [...prev, userMessage]);
           
-          // Handle TTS response - check if it's a real URL or mock data
-          if (response.data.ttsUrl && response.data.ttsUrl.startsWith('http')) {
-            // Real TTS URL from webhook
-            if (audioRef.current) {
-              audioRef.current.src = response.data.ttsUrl;
-              audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-            }
-          } else {
-            // Mock response - skip audio playback
-            console.log('Mock TTS response received - audio playback skipped');
+          // Play TTS response
+          if (audioRef.current) {
+            audioRef.current.src = response.data.ttsUrl;
+            audioRef.current.play().catch(e => console.log('Audio play failed:', e));
           }
           
-          // Add AI response with transcript
+          // Add AI response
           setTimeout(() => {
             const aiMessage = {
               id: Date.now() + 1,
