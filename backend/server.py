@@ -108,15 +108,12 @@ async def signup(user_data: UserSignUp):
 
 @api_router.post("/auth/signin")
 async def signin(user_data: UserSignIn):
-    # TODO: Replace with actual webhook when n8n is configured
-    # For now, return mock successful response to enable testing
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 SIGNIN_WEBHOOK,
                 json=user_data.dict(),
-                headers={"Content-Type": "application/json"},
-                timeout=5.0
+                headers={"Content-Type": "application/json"}
             )
             
             if response.status_code == 200:
@@ -127,24 +124,15 @@ async def signin(user_data: UserSignIn):
                     detail="Email or password is incorrect."
                 )
             else:
-                # Webhook returned non-success status
-                logger.warning(f"Signin webhook returned {response.status_code}: {response.text}")
-                # Return mock success response for testing
-                return {
-                    "email": user_data.email,
-                    "UserID": str(uuid.uuid4()),
-                    "token": "mock_token_" + str(uuid.uuid4())[:8],
-                    "message": "Logged in (mock response - webhook unavailable)"
-                }
-    except httpx.RequestError as e:
-        logger.warning(f"Signin webhook connection failed: {str(e)}")
-        # Return mock success response for testing
-        return {
-            "email": user_data.email,
-            "UserID": str(uuid.uuid4()), 
-            "token": "mock_token_" + str(uuid.uuid4())[:8],
-            "message": "Logged in (mock response - webhook unavailable)"
-        }
+                raise HTTPException(
+                    status_code=500,
+                    detail="Signin service temporarily unavailable"
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to connect to authentication service"
+        )
 
 @api_router.post("/user/display-name")
 async def change_display_name(data: DisplayNameChange):
