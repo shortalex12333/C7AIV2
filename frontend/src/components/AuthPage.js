@@ -133,7 +133,7 @@ const AuthPage = () => {
           variants={fadeInUp}
           initial="initial"
           animate="animate"
-          className="glass-effect rounded-2xl p-8"
+          className="glass-effect-strong rounded-2xl p-8"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             <AnimatePresence mode="wait">
