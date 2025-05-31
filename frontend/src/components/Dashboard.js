@@ -101,10 +101,20 @@ const Dashboard = () => {
         } 
       });
       
-      mediaRecorderRef.current = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      // Try WAV format first (preferred for direct Wit.ai compatibility)
+      let mediaRecorderOptions = { mimeType: 'audio/wav' };
+      let usingWav = true;
       
+      // Check if WAV is supported, fallback to WebM if not
+      if (!MediaRecorder.isTypeSupported('audio/wav')) {
+        console.log('WAV not supported, falling back to WebM/Opus');
+        mediaRecorderOptions = { mimeType: 'audio/webm;codecs=opus' };
+        usingWav = false;
+      }
+      
+      setRecordingFormat(usingWav ? 'wav' : 'webm');
+      
+      mediaRecorderRef.current = new MediaRecorder(stream, mediaRecorderOptions);
       audioChunksRef.current = [];
       
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -112,8 +122,37 @@ const Dashboard = () => {
       };
       
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await sendAudioToAPI(audioBlob);
+        const recordedBlob = new Blob(audioChunksRef.current, { 
+          type: usingWav ? 'audio/wav' : 'audio/webm' 
+        });
+        
+        let finalWavBlob;
+        
+        if (usingWav) {
+          // Already WAV format, use directly
+          finalWavBlob = recordedBlob;
+          console.log('Using native WAV recording');
+        } else {
+          // Convert WebM to WAV using Web Audio API
+          console.log('Converting WebM to WAV...');
+          try {
+            const arrayBuffer = await recordedBlob.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+            const wavArrayBuffer = encodeWAV(decoded);
+            finalWavBlob = new Blob([wavArrayBuffer], { type: 'audio/wav' });
+            console.log('WebM to WAV conversion completed');
+          } catch (conversionError) {
+            console.error('WAV conversion failed:', conversionError);
+            alert('Audio conversion failed. Please try again.');
+            setIsProcessing(false);
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
+        }
+        
+        // Send the WAV blob to the API
+        await sendAudioToAPI(finalWavBlob);
         stream.getTracks().forEach(track => track.stop());
       };
       
