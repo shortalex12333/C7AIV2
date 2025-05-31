@@ -240,7 +240,7 @@ const Dashboard = () => {
                 <div className="flex items-center space-x-3 mb-4">
                   <UserCircleIcon className="w-12 h-12 text-gray-400" />
                   <div>
-                    <h3 className="font-semibold">{displayName}</h3>
+                    <h3 className="font-semibold">{user?.email?.split('@')[0] || 'Founder'}</h3>
                     <p className="text-sm text-gray-400">{user?.email}</p>
                   </div>
                 </div>
