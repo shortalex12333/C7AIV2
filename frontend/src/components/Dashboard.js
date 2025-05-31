@@ -55,7 +55,115 @@ const Dashboard = () => {
   const voiceDetectionIntervalRef = useRef(null);
   const silenceTimerRef = useRef(null);
 
-  // WAV encoding function for audio buffer to WAV conversion
+  // Conversation states
+  const conversationStates = {
+    IDLE: 'idle',           // Ready to listen
+    LISTENING: 'listening', // Detecting voice activity  
+    RECORDING: 'recording', // Actively recording audio
+    PROCESSING: 'processing', // Sending/waiting for response
+    PLAYING: 'playing',     // TTS audio playing
+    INTERRUPTED: 'interrupted' // User interrupted during TTS
+  };
+
+  // Initialize hands-free voice detection
+  const initializeVoiceDetection = async () => {
+    try {
+      console.log('Initializing hands-free voice detection...');
+      
+      // Get microphone access
+      microphoneStreamRef.current = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000, // Optimal for voice detection
+          channelCount: 1
+        }
+      });
+
+      // Create audio context for real-time analysis
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContextRef.current.createMediaStreamSource(microphoneStreamRef.current);
+      
+      // Create analyser for voice activity detection
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      analyserRef.current.smoothingTimeConstant = 0.8;
+      
+      source.connect(analyserRef.current);
+      
+      // Start continuous voice monitoring
+      startVoiceDetection();
+      setConversationState(conversationStates.LISTENING);
+      setIsListening(true);
+      
+      console.log('Voice detection initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize voice detection:', error);
+      alert('Please allow microphone access for hands-free operation');
+    }
+  };
+
+  // Voice Activity Detection algorithm
+  const detectVoiceActivity = () => {
+    if (!analyserRef.current) return;
+
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
+    
+    // Calculate average volume level
+    const averageVolume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+    const normalizedVolume = averageVolume / 255; // Normalize to 0-1
+    
+    setVoiceLevel(normalizedVolume);
+
+    // Voice detected - start recording
+    if (normalizedVolume > voiceThreshold && conversationState === conversationStates.LISTENING) {
+      console.log('Voice activity detected, starting recording...');
+      setConversationState(conversationStates.RECORDING);
+      startHandsFreeRecording();
+    }
+    
+    // Silence detected while recording - start silence timer
+    else if (normalizedVolume < silenceThreshold && conversationState === conversationStates.RECORDING) {
+      if (!silenceTimerRef.current) {
+        console.log('Silence detected, starting timeout...');
+        silenceTimerRef.current = setTimeout(() => {
+          console.log('Silence timeout reached, stopping recording...');
+          stopHandsFreeRecording();
+        }, silenceTimeout);
+      }
+    }
+    
+    // Voice resumed during silence timer - cancel timeout
+    else if (normalizedVolume > voiceThreshold && conversationState === conversationStates.RECORDING && silenceTimerRef.current) {
+      console.log('Voice resumed, canceling silence timeout...');
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  };
+
+  // Start continuous voice monitoring
+  const startVoiceDetection = () => {
+    if (voiceDetectionIntervalRef.current) return;
+    
+    voiceDetectionIntervalRef.current = setInterval(detectVoiceActivity, 100); // Check every 100ms
+    console.log('Voice detection monitoring started');
+  };
+
+  // Stop voice monitoring
+  const stopVoiceDetection = () => {
+    if (voiceDetectionIntervalRef.current) {
+      clearInterval(voiceDetectionIntervalRef.current);
+      voiceDetectionIntervalRef.current = null;
+    }
+    
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    
+    console.log('Voice detection monitoring stopped');
+  };
   const encodeWAV = (buffer) => {
     const numCh = buffer.numberOfChannels;
     const sr = buffer.sampleRate;
