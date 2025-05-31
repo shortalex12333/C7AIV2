@@ -168,36 +168,36 @@ const Dashboard = () => {
     }
   };
 
-  const sendAudioToAPI = async (wavBlob) => {
+  // Upload function that sends WAV blob to n8n → Wit.ai
+  const uploadToN8n = async (wavBlob) => {
     try {
-      // Build FormData correctly - wavBlob should always be type 'audio/wav'
+      // Ensure we always have a WAV blob
+      console.log('Uploading WAV audio to n8n → Wit.ai', { 
+        sessionId: sessionID.current, 
+        blobSize: wavBlob.size,
+        blobType: wavBlob.type,
+        isWav: wavBlob.type === 'audio/wav'
+      });
+
+      // Build FormData with WAV blob
       const formData = new FormData();
       formData.append('audio', wavBlob, 'recording.wav');
       formData.append('sessionID', sessionID.current);
 
-      // Set exact headers for WAV format
+      // Set headers for WAV format
       const headers = {
         'Content-Type': 'audio/wav',
         'Authorization': `Bearer ${user.token}`,
       };
 
-      // Debug log before sending
-      console.log('Sending WAV audio to voice-chat webhook', { 
-        sessionId: sessionID.current, 
-        blob: wavBlob,
-        blobSize: wavBlob.size,
-        blobType: wavBlob.type,
-        recordingFormat: recordingFormat
-      });
-
-      // Send POST to production webhook
+      // Send POST to production webhook (n8n forwards to Wit.ai)
       const response = await axios.post(
         'https://ventruk.app.n8n.cloud/webhook/voice-chat',
         formData,
         { headers }
       );
       
-      // Handle response
+      // Handle successful response from Wit.ai via n8n
       const { ttsUrl, transcript } = response.data;
       
       if (ttsUrl && transcript) {
@@ -229,12 +229,19 @@ const Dashboard = () => {
         }, 500);
       }
     } catch (error) {
-      console.error('Error sending WAV audio to voice-chat webhook:', error);
-      alert('Failed to process voice message. Please try again.');
+      console.error('Error uploading WAV audio to n8n → Wit.ai:', error);
+      if (error.response?.status === 400) {
+        alert('Audio format not supported by Wit.ai. Please try recording again.');
+      } else {
+        alert('Failed to process voice message. Please try again.');
+      }
     } finally {
       setIsProcessing(false);
     }
   };
+
+  // Keep sendAudioToAPI as alias for backward compatibility
+  const sendAudioToAPI = uploadToN8n;
 
   const WaveformRecorder = () => (
     <div className="flex items-center justify-center p-8">
