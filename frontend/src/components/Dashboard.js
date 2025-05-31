@@ -172,25 +172,26 @@ const Dashboard = () => {
     }
   };
 
-  const sendAudioToAPI = async (blob) => {
+  const sendAudioToAPI = async (wavBlob) => {
     try {
-      // Build FormData correctly
+      // Build FormData correctly - wavBlob should always be type 'audio/wav'
       const formData = new FormData();
-      formData.append('audio', blob, 'audio.webm');
-      formData.append('sessionID', sessionID.current); // use conversation UUID
+      formData.append('audio', wavBlob, 'recording.wav');
+      formData.append('sessionID', sessionID.current);
 
-      // Set exact headers
+      // Set exact headers for WAV format
       const headers = {
-        'Content-Type': 'audio/webm;codecs=opus',
+        'Content-Type': 'audio/wav',
         'Authorization': `Bearer ${user.token}`,
       };
 
       // Debug log before sending
-      console.log('Sending audio to voice-chat webhook', { 
+      console.log('Sending WAV audio to voice-chat webhook', { 
         sessionId: sessionID.current, 
-        blob: blob,
-        blobSize: blob.size,
-        blobType: blob.type 
+        blob: wavBlob,
+        blobSize: wavBlob.size,
+        blobType: wavBlob.type,
+        recordingFormat: recordingFormat
       });
 
       // Send POST to production webhook
@@ -232,7 +233,7 @@ const Dashboard = () => {
         }, 500);
       }
     } catch (error) {
-      console.error('Error sending audio to voice-chat webhook:', error);
+      console.error('Error sending WAV audio to voice-chat webhook:', error);
       alert('Failed to process voice message. Please try again.');
     } finally {
       setIsProcessing(false);
