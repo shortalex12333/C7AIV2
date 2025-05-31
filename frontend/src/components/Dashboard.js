@@ -365,21 +365,35 @@ const Dashboard = () => {
     }
   };
 
-  // Upload function that sends WAV blob to n8n → Wit.ai
+  // Enhanced upload function with security data transmission
   const uploadToN8n = async (wavBlob) => {
     try {
-      // Ensure we always have a WAV blob
-      console.log('Uploading WAV audio to n8n → Wit.ai', { 
-        sessionId: sessionID.current, 
-        blobSize: wavBlob.size,
-        blobType: wavBlob.type,
-        isWav: wavBlob.type === 'audio/wav'
-      });
+      setConversationState(conversationStates.PROCESSING);
+      
+      // Enhanced security payload
+      const enhancedPayload = {
+        userID: user.UserID || user.userID || user.email,
+        sessionID: sessionID.current,
+        clientIP: await getClientIP(),
+        timestamp: new Date().toISOString(),
+        deviceInfo: {
+          platform: navigator.platform,
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        },
+        conversationContext: {
+          messageCount: messages.length,
+          sessionDuration: Date.now() - parseInt(sessionID.current)
+        }
+      };
 
-      // Build FormData with WAV blob
+      console.log('Uploading WAV audio with enhanced security data:', enhancedPayload);
+
+      // Build FormData with WAV blob and enhanced metadata
       const formData = new FormData();
       formData.append('audio', wavBlob, 'recording.wav');
-      formData.append('sessionID', sessionID.current);
+      formData.append('metadata', JSON.stringify(enhancedPayload));
 
       // Set headers for WAV format
       const headers = {
@@ -394,10 +408,15 @@ const Dashboard = () => {
         { headers }
       );
       
-      // Handle successful response from Wit.ai via n8n
-      const { ttsAudio, mimeType, transcript } = response.data;
+      // Handle enhanced response
+      const { ttsAudio, mimeType, transcript, userID, sessionID: responseSessionID, conversationState: aiState, metadata } = response.data;
       
       if (transcript) {
+        // Validate session continuity
+        if (responseSessionID && responseSessionID !== sessionID.current) {
+          console.warn('Session ID mismatch:', sessionID.current, 'vs', responseSessionID);
+        }
+        
         // Add user message first
         const userMessage = {
           id: Date.now(),
@@ -414,27 +433,44 @@ const Dashboard = () => {
           id: aiMessageId,
           type: 'ai',
           content: transcript,
-          timestamp: new Date()
+          timestamp: new Date(),
+          metadata: metadata // Store additional AI context
         };
         
         setMessages(prev => [...prev, aiMessage]);
         
         // Auto-play TTS audio if available
         if (ttsAudio && mimeType) {
+          setConversationState(conversationStates.PLAYING);
           setTimeout(() => {
             playTTSAudio(ttsAudio, mimeType, aiMessageId);
-          }, 300); // Small delay to let message render
+          }, 300);
+        } else {
+          // No audio, return to listening
+          setConversationState(conversationStates.LISTENING);
         }
       }
     } catch (error) {
       console.error('Error uploading WAV audio to n8n → Wit.ai:', error);
+      setConversationState(conversationStates.LISTENING);
+      
       if (error.response?.status === 400) {
         alert('Audio format not supported by Wit.ai. Please try recording again.');
       } else {
         alert('Failed to process voice message. Please try again.');
       }
-    } finally {
-      setIsProcessing(false);
+    }
+  };
+
+  // Get client IP for security tracking
+  const getClientIP = async () => {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip;
+    } catch (error) {
+      console.warn('Could not fetch client IP:', error);
+      return 'unknown';
     }
   };
 
