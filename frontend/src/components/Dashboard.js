@@ -47,6 +47,13 @@ const Dashboard = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const sessionID = useRef(Date.now().toString());
+  
+  // Voice Activity Detection refs
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const microphoneStreamRef = useRef(null);
+  const voiceDetectionIntervalRef = useRef(null);
+  const silenceTimerRef = useRef(null);
 
   // WAV encoding function for audio buffer to WAV conversion
   const encodeWAV = (buffer) => {
