@@ -540,7 +540,7 @@ const Dashboard = () => {
       </div>
 
       {/* Hidden Audio Element for TTS Playback */}
-      <audio ref={audioRef} className="hidden" />
+
 
       {/* Overlay for Sidebar */}
       <AnimatePresence>
