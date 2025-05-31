@@ -480,10 +480,30 @@ const Dashboard = () => {
                   className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                     message.type === 'user'
                       ? 'chat-bubble-user text-white'
-                      : 'chat-bubble-ai text-white'
+                      : `chat-bubble-ai text-white ${
+                          isPlayingResponse === message.id ? 'animate-pulse ring-2 ring-accent-teal/50' : ''
+                        }`
                   }`}
                 >
                   <p className="text-sm">{message.content}</p>
+                  
+                  {/* Audio playing indicator for AI messages */}
+                  {message.type === 'ai' && isPlayingResponse === message.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="flex items-center space-x-2 mt-2 text-xs text-accent-teal"
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                        className="w-2 h-2 bg-accent-teal rounded-full"
+                      />
+                      <span>🔊 Playing response...</span>
+                    </motion.div>
+                  )}
+                  
                   <p className="text-xs mt-2 opacity-70">
                     {message.timestamp.toLocaleTimeString()}
                   </p>
