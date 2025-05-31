@@ -590,6 +590,52 @@ const Dashboard = () => {
   // Keep sendAudioToAPI as alias for backward compatibility
   const sendAudioToAPI = uploadToN8n;
 
+  // Initialize hands-free mode on component mount
+  useEffect(() => {
+    // Auto-start hands-free mode when component mounts
+    initializeVoiceDetection();
+    
+    // Cleanup on unmount
+    return () => {
+      stopVoiceDetection();
+      
+      // Clean up audio context
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      
+      // Clean up microphone stream
+      if (microphoneStreamRef.current) {
+        microphoneStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      
+      // Stop any current TTS
+      if (window.currentTTSAudio) {
+        window.currentTTSAudio.pause();
+        window.currentTTSAudio = null;
+      }
+    };
+  }, []);
+
+  // Toggle hands-free mode
+  const toggleHandsFreeMode = async () => {
+    if (isListening) {
+      console.log('Disabling hands-free mode...');
+      stopVoiceDetection();
+      setIsListening(false);
+      setConversationState(conversationStates.IDLE);
+      
+      // Stop microphone stream
+      if (microphoneStreamRef.current) {
+        microphoneStreamRef.current.getTracks().forEach(track => track.stop());
+        microphoneStreamRef.current = null;
+      }
+    } else {
+      console.log('Enabling hands-free mode...');
+      await initializeVoiceDetection();
+    }
+  };
+
   const WaveformRecorder = () => (
     <div className="flex items-center justify-center p-8">
       <div className="relative">
