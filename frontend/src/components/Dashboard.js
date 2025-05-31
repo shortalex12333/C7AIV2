@@ -198,10 +198,10 @@ const Dashboard = () => {
       );
       
       // Handle successful response from Wit.ai via n8n
-      const { ttsUrl, transcript } = response.data;
+      const { ttsAudio, mimeType, transcript } = response.data;
       
-      if (ttsUrl && transcript) {
-        // Add user message
+      if (transcript) {
+        // Add user message first
         const userMessage = {
           id: Date.now(),
           type: 'user',
@@ -211,22 +211,23 @@ const Dashboard = () => {
         
         setMessages(prev => [...prev, userMessage]);
         
-        // Play TTS response
-        if (audioRef.current) {
-          audioRef.current.src = ttsUrl;
-          audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-        }
-        
         // Add AI response with transcript
-        setTimeout(() => {
-          const aiMessage = {
-            id: Date.now() + 1,
-            type: 'ai',
-            content: transcript,
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, aiMessage]);
-        }, 500);
+        const aiMessageId = Date.now() + 1;
+        const aiMessage = {
+          id: aiMessageId,
+          type: 'ai',
+          content: transcript,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        
+        // Auto-play TTS audio if available
+        if (ttsAudio && mimeType) {
+          setTimeout(() => {
+            playTTSAudio(ttsAudio, mimeType, aiMessageId);
+          }, 300); // Small delay to let message render
+        }
       }
     } catch (error) {
       console.error('Error uploading WAV audio to n8n → Wit.ai:', error);
@@ -237,6 +238,68 @@ const Dashboard = () => {
       }
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Function to convert base64 audio to blob and auto-play
+  const playTTSAudio = async (ttsAudio, mimeType, messageId) => {
+    try {
+      // Set playing state for visual feedback
+      setIsPlayingResponse(messageId);
+      
+      // Decode base64 to Uint8Array
+      const binary = atob(ttsAudio);
+      const len = binary.length;
+      const buffer = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      
+      // Create blob with provided MIME type
+      const audioBlob = new Blob([buffer], { type: mimeType });
+      
+      // Generate object URL and auto-play
+      const url = URL.createObjectURL(audioBlob);
+      const audio = new Audio(url);
+      
+      // Handle playback events
+      audio.onended = () => {
+        setIsPlayingResponse(null);
+        URL.revokeObjectURL(url); // Cleanup
+      };
+      
+      audio.onerror = () => {
+        console.error('Audio playback failed');
+        setIsPlayingResponse(null);
+        URL.revokeObjectURL(url);
+        // Show error banner briefly
+        setTimeout(() => {
+          alert('⚠️ Audio failed; showing text only');
+        }, 100);
+      };
+      
+      // Auto-play immediately (iOS Safari compatible since it's in same user interaction)
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Autoplay blocked:', error);
+          setIsPlayingResponse(null);
+          URL.revokeObjectURL(url);
+          // Show retry option
+          setTimeout(() => {
+            alert('🔊 Tap to play AI response');
+          }, 100);
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error converting base64 audio:', error);
+      setIsPlayingResponse(null);
+      // Show fallback error
+      setTimeout(() => {
+        alert('⚠️ Audio failed; showing text only');
+      }, 100);
     }
   };
 
