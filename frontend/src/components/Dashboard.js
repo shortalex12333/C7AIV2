@@ -30,7 +30,7 @@ const Dashboard = () => {
     }
   ]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.email?.split('@')[0] || 'Founder');
+  const [recordingFormat, setRecordingFormat] = useState('wav'); // Track what format we're using
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
