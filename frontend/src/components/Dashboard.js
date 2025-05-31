@@ -105,47 +105,39 @@ const Dashboard = () => {
         } 
       });
       
-      // Try WAV format first (preferred for direct Wit.ai compatibility)
-      let mediaRecorderOptions = { mimeType: 'audio/wav' };
-      let usingWav = true;
+      // Check support for WAV format first
+      const wavMime = 'audio/wav';
+      const preferredMime = MediaRecorder.isTypeSupported(wavMime)
+        ? wavMime
+        : 'audio/webm;codecs=opus';
       
-      // Check if WAV is supported, fallback to WebM if not
-      if (!MediaRecorder.isTypeSupported('audio/wav')) {
-        console.log('WAV not supported, falling back to WebM/Opus');
-        mediaRecorderOptions = { mimeType: 'audio/webm;codecs=opus' };
-        usingWav = false;
-      }
+      console.log(`Recording with MIME type: ${preferredMime}`);
+      setRecordingFormat(preferredMime === wavMime ? 'wav' : 'webm');
       
-      setRecordingFormat(usingWav ? 'wav' : 'webm');
-      
-      mediaRecorderRef.current = new MediaRecorder(stream, mediaRecorderOptions);
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: preferredMime });
       audioChunksRef.current = [];
       
       mediaRecorderRef.current.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
       
-      mediaRecorderRef.current.onstop = async () => {
+      mediaRecorderRef.current.onstop = async (event) => {
         const recordedBlob = new Blob(audioChunksRef.current, { 
-          type: usingWav ? 'audio/wav' : 'audio/webm' 
+          type: mediaRecorderRef.current.mimeType 
         });
         
-        let finalWavBlob;
+        let wavBlob;
         
-        if (usingWav) {
+        if (recordedBlob.type === 'audio/wav') {
           // Already WAV format, use directly
-          finalWavBlob = recordedBlob;
+          wavBlob = recordedBlob;
           console.log('Using native WAV recording');
         } else {
           // Convert WebM to WAV using Web Audio API
-          console.log('Converting WebM to WAV...');
+          console.log('Converting WebM to WAV for Wit.ai compatibility...');
           try {
-            const arrayBuffer = await recordedBlob.arrayBuffer();
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const decoded = await audioCtx.decodeAudioData(arrayBuffer);
-            const wavArrayBuffer = encodeWAV(decoded);
-            finalWavBlob = new Blob([wavArrayBuffer], { type: 'audio/wav' });
-            console.log('WebM to WAV conversion completed');
+            wavBlob = await convertWebMToWav(recordedBlob);
+            console.log('WebM to WAV conversion completed successfully');
           } catch (conversionError) {
             console.error('WAV conversion failed:', conversionError);
             alert('Audio conversion failed. Please try again.');
@@ -155,8 +147,8 @@ const Dashboard = () => {
           }
         }
         
-        // Send the WAV blob to the API
-        await sendAudioToAPI(finalWavBlob);
+        // Send the WAV blob to n8n → Wit.ai
+        await sendAudioToAPI(wavBlob);
         stream.getTracks().forEach(track => track.stop());
       };
       
