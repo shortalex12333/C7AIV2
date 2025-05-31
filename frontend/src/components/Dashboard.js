@@ -35,7 +35,6 @@ const Dashboard = () => {
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const audioRef = useRef(null);
   const sessionID = useRef(Date.now().toString());
 
   // WAV encoding function for audio buffer to WAV conversion
