@@ -33,6 +33,17 @@ const Dashboard = () => {
   const [isPlayingResponse, setIsPlayingResponse] = useState(null); // Track which message is playing audio
   const [recordingFormat, setRecordingFormat] = useState('wav'); // Track recording format (wav/webm)
   
+  // Enhanced voice states for hands-free operation
+  const [conversationState, setConversationState] = useState('idle');
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLevel, setVoiceLevel] = useState(0);
+  const [silenceTimer, setSilenceTimer] = useState(null);
+  
+  // Voice detection configuration
+  const [voiceThreshold, setVoiceThreshold] = useState(0.03); // Configurable sensitivity
+  const [silenceThreshold, setSilenceThreshold] = useState(0.01);
+  const [silenceTimeout, setSilenceTimeout] = useState(2500); // 2.5 seconds
+  
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const sessionID = useRef(Date.now().toString());
