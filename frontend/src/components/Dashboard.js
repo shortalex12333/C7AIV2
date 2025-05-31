@@ -37,58 +37,62 @@ const Dashboard = () => {
   const audioRef = useRef(null);
   const sessionID = useRef(Date.now().toString());
 
-  // WAV encoding function for fallback conversion
-  const encodeWAV = (audioBuffer) => {
-    const numChannels = audioBuffer.numberOfChannels;
-    const sampleRate = audioBuffer.sampleRate;
-    const format = 1; // PCM
-    const bitDepth = 16;
-    
-    // Calculate buffer size: 44 bytes for WAV header + audio data
-    const bufferLength = 44 + audioBuffer.length * numChannels * 2;
-    const result = new DataView(new ArrayBuffer(bufferLength));
-    let offset = 0;
-    
-    // Helper function to write string to buffer
-    function writeString(s) {
-      for (let i = 0; i < s.length; i++) {
-        result.setUint8(offset + i, s.charCodeAt(i));
+  // WAV conversion function for browsers that don't support native WAV recording
+  const convertWebMToWav = async (webmBlob) => {
+    const arrayBuf = await webmBlob.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await audioCtx.decodeAudioData(arrayBuf);
+
+    function encodeWAV(buffer) {
+      const numCh = buffer.numberOfChannels;
+      const sr = buffer.sampleRate;
+      const bd = 16;
+      const blockAlign = numCh * (bd / 8);
+      const byteRate = sr * blockAlign;
+      const dataLen = buffer.length * blockAlign;
+      const view = new DataView(new ArrayBuffer(44 + dataLen));
+      let offset = 0;
+      
+      const writeString = (s) => {
+        for (let i = 0; i < s.length; i++) {
+          view.setUint8(offset + i, s.charCodeAt(i));
+        }
+        offset += s.length;
+      };
+      
+      writeString('RIFF');
+      view.setUint32(offset, 36 + dataLen, true); offset += 4;
+      writeString('WAVE');
+      writeString('fmt ');
+      view.setUint32(offset, 16, true); offset += 4;
+      view.setUint16(offset, 1, true); offset += 2;        // PCM format
+      view.setUint16(offset, numCh, true); offset += 2;
+      view.setUint32(offset, sr, true); offset += 4;
+      view.setUint32(offset, byteRate, true); offset += 4;
+      view.setUint16(offset, blockAlign, true); offset += 2;
+      view.setUint16(offset, bd, true); offset += 2;
+      writeString('data');
+      view.setUint32(offset, dataLen, true); offset += 4;
+      
+      const interleaved = new Int16Array(buffer.length * numCh);
+      for (let i = 0; i < buffer.length; i++) {
+        for (let ch = 0; ch < numCh; ch++) {
+          let sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+          interleaved[i * numCh + ch] = sample < 0
+            ? sample * 0x8000
+            : sample * 0x7FFF;
+        }
       }
-    }
-    
-    // WAV Header
-    writeString('RIFF'); offset += 4;
-    result.setUint32(offset, 36 + audioBuffer.length * numChannels * 2, true); offset += 4;
-    writeString('WAVE'); offset += 4;
-    writeString('fmt '); offset += 4;
-    result.setUint32(offset, 16, true); offset += 4;                              // Subchunk1Size (16 for PCM)
-    result.setUint16(offset, format, true); offset += 2;                          // AudioFormat (1 = PCM)
-    result.setUint16(offset, numChannels, true); offset += 2;                     // NumChannels
-    result.setUint32(offset, sampleRate, true); offset += 4;                     // SampleRate
-    result.setUint32(offset, sampleRate * numChannels * (bitDepth / 8), true); offset += 4; // ByteRate
-    result.setUint16(offset, numChannels * (bitDepth / 8), true); offset += 2;   // BlockAlign
-    result.setUint16(offset, bitDepth, true); offset += 2;                       // BitsPerSample
-    
-    writeString('data'); offset += 4;
-    result.setUint32(offset, audioBuffer.length * numChannels * (bitDepth / 8), true); offset += 4;
-    
-    // Write interleaved PCM samples
-    const interleaved = new Int16Array(audioBuffer.length * numChannels);
-    for (let i = 0; i < audioBuffer.length; i++) {
-      for (let ch = 0; ch < numChannels; ch++) {
-        const sample = audioBuffer.getChannelData(ch)[i];
-        // Clip and convert float to Int16
-        const s = Math.max(-1, Math.min(1, sample));
-        interleaved[i * numChannels + ch] = Math.floor(s < 0 ? s * 0x8000 : s * 0x7FFF);
+      
+      for (let i = 0; i < interleaved.length; i++, offset += 2) {
+        view.setInt16(offset, interleaved[i], true);
       }
+      
+      return view.buffer;
     }
-    
-    // Write PCM data to buffer
-    for (let i = 0; i < interleaved.length; i++, offset += 2) {
-      result.setInt16(offset, interleaved[i], true);
-    }
-    
-    return result.buffer;
+
+    const wavArrayBuf = encodeWAV(decoded);
+    return new Blob([wavArrayBuf], { type: 'audio/wav' });
   };
 
   const startRecording = async () => {
