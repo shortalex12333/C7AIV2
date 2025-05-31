@@ -539,9 +539,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Hidden Audio Element for TTS Playback */}
-
-
       {/* Overlay for Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
