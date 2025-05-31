@@ -929,9 +929,9 @@ const Dashboard = () => {
           </AnimatePresence>
         </div>
 
-        {/* Voice Recorder */}
+        {/* Enhanced Voice Interface */}
         <div className="border-t border-gray-800">
-          <WaveformRecorder />
+          <EnhancedVoiceInterface />
         </div>
 
         {/* Quick Reply Pills */}
