@@ -37,60 +37,60 @@ const Dashboard = () => {
   const audioRef = useRef(null);
   const sessionID = useRef(Date.now().toString());
 
+  // WAV encoding function for audio buffer to WAV conversion
+  const encodeWAV = (buffer) => {
+    const numCh = buffer.numberOfChannels;
+    const sr = buffer.sampleRate;
+    const bd = 16;
+    const blockAlign = numCh * (bd / 8);
+    const byteRate = sr * blockAlign;
+    const dataLen = buffer.length * blockAlign;
+    const view = new DataView(new ArrayBuffer(44 + dataLen));
+    let offset = 0;
+    
+    const writeString = (s) => {
+      for (let i = 0; i < s.length; i++) {
+        view.setUint8(offset + i, s.charCodeAt(i));
+      }
+      offset += s.length;
+    };
+    
+    writeString('RIFF');
+    view.setUint32(offset, 36 + dataLen, true); offset += 4;
+    writeString('WAVE');
+    writeString('fmt ');
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;        // PCM format
+    view.setUint16(offset, numCh, true); offset += 2;
+    view.setUint32(offset, sr, true); offset += 4;
+    view.setUint32(offset, byteRate, true); offset += 4;
+    view.setUint16(offset, blockAlign, true); offset += 2;
+    view.setUint16(offset, bd, true); offset += 2;
+    writeString('data');
+    view.setUint32(offset, dataLen, true); offset += 4;
+    
+    const interleaved = new Int16Array(buffer.length * numCh);
+    for (let i = 0; i < buffer.length; i++) {
+      for (let ch = 0; ch < numCh; ch++) {
+        let sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+        interleaved[i * numCh + ch] = sample < 0
+          ? sample * 0x8000
+          : sample * 0x7FFF;
+      }
+    }
+    
+    for (let i = 0; i < interleaved.length; i++, offset += 2) {
+      view.setInt16(offset, interleaved[i], true);
+    }
+    
+    return view.buffer;
+  };
+
   // WAV conversion function for browsers that don't support native WAV recording
   const convertWebMToWav = async (webmBlob) => {
     const arrayBuf = await webmBlob.arrayBuffer();
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const decoded = await audioCtx.decodeAudioData(arrayBuf);
-
-    function encodeWAV(buffer) {
-      const numCh = buffer.numberOfChannels;
-      const sr = buffer.sampleRate;
-      const bd = 16;
-      const blockAlign = numCh * (bd / 8);
-      const byteRate = sr * blockAlign;
-      const dataLen = buffer.length * blockAlign;
-      const view = new DataView(new ArrayBuffer(44 + dataLen));
-      let offset = 0;
-      
-      const writeString = (s) => {
-        for (let i = 0; i < s.length; i++) {
-          view.setUint8(offset + i, s.charCodeAt(i));
-        }
-        offset += s.length;
-      };
-      
-      writeString('RIFF');
-      view.setUint32(offset, 36 + dataLen, true); offset += 4;
-      writeString('WAVE');
-      writeString('fmt ');
-      view.setUint32(offset, 16, true); offset += 4;
-      view.setUint16(offset, 1, true); offset += 2;        // PCM format
-      view.setUint16(offset, numCh, true); offset += 2;
-      view.setUint32(offset, sr, true); offset += 4;
-      view.setUint32(offset, byteRate, true); offset += 4;
-      view.setUint16(offset, blockAlign, true); offset += 2;
-      view.setUint16(offset, bd, true); offset += 2;
-      writeString('data');
-      view.setUint32(offset, dataLen, true); offset += 4;
-      
-      const interleaved = new Int16Array(buffer.length * numCh);
-      for (let i = 0; i < buffer.length; i++) {
-        for (let ch = 0; ch < numCh; ch++) {
-          let sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
-          interleaved[i * numCh + ch] = sample < 0
-            ? sample * 0x8000
-            : sample * 0x7FFF;
-        }
-      }
-      
-      for (let i = 0; i < interleaved.length; i++, offset += 2) {
-        view.setInt16(offset, interleaved[i], true);
-      }
-      
-      return view.buffer;
-    }
-
     const wavArrayBuf = encodeWAV(decoded);
     return new Blob([wavArrayBuf], { type: 'audio/wav' });
   };
