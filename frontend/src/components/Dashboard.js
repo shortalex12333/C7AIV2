@@ -212,7 +212,78 @@ const Dashboard = () => {
     return view.buffer;
   };
 
-  // WAV conversion function for browsers that don't support native WAV recording
+  // Hands-free recording functions
+  const startHandsFreeRecording = async () => {
+    try {
+      // Use the same stream for recording that we're using for detection
+      const stream = microphoneStreamRef.current;
+      if (!stream) {
+        throw new Error('No microphone stream available');
+      }
+
+      // Check WAV support and initialize MediaRecorder
+      const wavMime = 'audio/wav';
+      const preferredMime = MediaRecorder.isTypeSupported(wavMime) ? wavMime : 'audio/webm;codecs=opus';
+      
+      console.log(`Hands-free recording with MIME type: ${preferredMime}`);
+      setRecordingFormat(preferredMime === wavMime ? 'wav' : 'webm');
+      
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: preferredMime });
+      audioChunksRef.current = [];
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+      
+      mediaRecorderRef.current.onstop = async (event) => {
+        const recordedBlob = new Blob(audioChunksRef.current, { 
+          type: mediaRecorderRef.current.mimeType 
+        });
+        
+        let wavBlob;
+        
+        if (recordedBlob.type === 'audio/wav') {
+          wavBlob = recordedBlob;
+          console.log('Using native WAV recording');
+        } else {
+          console.log('Converting WebM to WAV for Wit.ai compatibility...');
+          try {
+            wavBlob = await convertWebMToWav(recordedBlob);
+            console.log('WebM to WAV conversion completed successfully');
+          } catch (conversionError) {
+            console.error('WAV conversion failed:', conversionError);
+            alert('Audio conversion failed. Please try again.');
+            setConversationState(conversationStates.LISTENING);
+            return;
+          }
+        }
+        
+        // Process the audio
+        await uploadToN8n(wavBlob);
+      };
+      
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      
+    } catch (error) {
+      console.error('Failed to start hands-free recording:', error);
+      setConversationState(conversationStates.LISTENING);
+    }
+  };
+
+  const stopHandsFreeRecording = () => {
+    if (mediaRecorderRef.current && conversationState === conversationStates.RECORDING) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setConversationState(conversationStates.PROCESSING);
+      
+      // Clear any pending silence timer
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+    }
+  };
   const convertWebMToWav = async (webmBlob) => {
     const arrayBuf = await webmBlob.arrayBuffer();
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
