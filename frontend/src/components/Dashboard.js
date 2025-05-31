@@ -474,11 +474,12 @@ const Dashboard = () => {
     }
   };
 
-  // Function to convert base64 audio to blob and auto-play
+  // Enhanced TTS playback with interruption detection
   const playTTSAudio = async (ttsAudio, mimeType, messageId) => {
     try {
       // Set playing state for visual feedback
       setIsPlayingResponse(messageId);
+      setConversationState(conversationStates.PLAYING);
       
       // Decode base64 to Uint8Array
       const binary = atob(ttsAudio);
@@ -495,16 +496,60 @@ const Dashboard = () => {
       const url = URL.createObjectURL(audioBlob);
       const audio = new Audio(url);
       
+      // Store reference for interruption capability
+      window.currentTTSAudio = audio;
+      
+      // Enhanced voice detection during TTS playback for interruption
+      const interruptionDetectionInterval = setInterval(() => {
+        if (conversationState === conversationStates.PLAYING && analyserRef.current) {
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const averageVolume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          const normalizedVolume = averageVolume / 255;
+          
+          // User voice detected during TTS - interrupt immediately
+          if (normalizedVolume > voiceThreshold) {
+            console.log('Voice interruption detected during TTS playback');
+            
+            // Stop TTS immediately
+            audio.pause();
+            audio.currentTime = 0;
+            
+            // Clean up
+            clearInterval(interruptionDetectionInterval);
+            setIsPlayingResponse(null);
+            URL.revokeObjectURL(url);
+            window.currentTTSAudio = null;
+            
+            // Transition to interrupted state and start new recording
+            setConversationState(conversationStates.INTERRUPTED);
+            setTimeout(() => {
+              console.log('Starting new recording after interruption...');
+              setConversationState(conversationStates.RECORDING);
+              startHandsFreeRecording();
+            }, 100);
+          }
+        }
+      }, 50); // Check every 50ms for fast interruption response
+      
       // Handle playback events
       audio.onended = () => {
+        clearInterval(interruptionDetectionInterval);
         setIsPlayingResponse(null);
-        URL.revokeObjectURL(url); // Cleanup
+        setConversationState(conversationStates.LISTENING);
+        URL.revokeObjectURL(url);
+        window.currentTTSAudio = null;
+        console.log('TTS playback completed, returning to listening mode');
       };
       
       audio.onerror = () => {
         console.error('Audio playback failed');
+        clearInterval(interruptionDetectionInterval);
         setIsPlayingResponse(null);
+        setConversationState(conversationStates.LISTENING);
         URL.revokeObjectURL(url);
+        window.currentTTSAudio = null;
+        
         // Show error banner briefly
         setTimeout(() => {
           alert('⚠️ Audio failed; showing text only');
@@ -517,8 +562,12 @@ const Dashboard = () => {
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           console.error('Autoplay blocked:', error);
+          clearInterval(interruptionDetectionInterval);
           setIsPlayingResponse(null);
+          setConversationState(conversationStates.LISTENING);
           URL.revokeObjectURL(url);
+          window.currentTTSAudio = null;
+          
           // Show retry option
           setTimeout(() => {
             alert('🔊 Tap to play AI response');
@@ -529,6 +578,8 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error converting base64 audio:', error);
       setIsPlayingResponse(null);
+      setConversationState(conversationStates.LISTENING);
+      
       // Show fallback error
       setTimeout(() => {
         alert('⚠️ Audio failed; showing text only');
