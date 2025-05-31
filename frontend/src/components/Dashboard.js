@@ -30,7 +30,7 @@ const Dashboard = () => {
     }
   ]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [recordingFormat, setRecordingFormat] = useState('wav'); // Track what format we're using
+  const [isPlayingResponse, setIsPlayingResponse] = useState(null); // Track which message is playing audio
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
