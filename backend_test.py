@@ -476,6 +476,46 @@ class BackendAPITest(unittest.TestCase):
         self.assertIn("current_streak", data)
         
         logger.info("Performance metrics endpoint test passed")
+        
+    def test_performance_metrics_endpoint_with_security_headers(self):
+        """Test the performance metrics endpoint with security headers"""
+        logger.info("Testing performance metrics endpoint with security headers")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.get(
+            f"{BACKEND_URL}/api/performance-metrics/{self.test_user_id}",
+            headers=security_headers
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Performance metrics with security headers response status: {response.status_code}")
+        logger.info(f"Performance metrics with security headers response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("user_id", data)
+        self.assertEqual(data["user_id"], self.test_user_id)
+        self.assertIn("active_days", data)
+        self.assertIn("goal_progress_avg", data)
+        self.assertIn("workout_consistency", data)
+        self.assertIn("daily_interaction_count", data)
+        self.assertIn("satisfaction_rate", data)
+        self.assertIn("current_streak", data)
+        
+        logger.info("Performance metrics endpoint with security headers test passed")
     
     def test_goal_update_endpoint(self):
         """Test the goal update endpoint"""
