@@ -437,9 +437,16 @@ async def get_user_dashboard(user_id: str, security: dict = Depends(validate_sec
 
         # Send security payload to N8N webhook
         security_payload = get_security_payload(user_id, "dashboard_view")
-        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
+        n8n_response = await call_n8n_webhook(
+            "dashboard_view", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
         
         logger.info(f"Dashboard accessed by user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
         
         return dashboard_data
         
@@ -477,11 +484,18 @@ async def get_user_goals(user_id: str, security: dict = Depends(validate_securit
             )
         ]
 
-        # Send security payload
+        # Send security payload to N8N webhook
         security_payload = get_security_payload(user_id, "goals_view")
-        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
+        n8n_response = await call_n8n_webhook(
+            "goals_view", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
         
         logger.info(f"Goals retrieved for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
         return {"goals": goals, "total": len(goals)}
         
     except Exception as e:
@@ -511,11 +525,19 @@ async def update_goal(goal_data: dict, security: dict = Depends(validate_securit
             target_date=datetime.now() + timedelta(days=30)
         )
 
-        # Send security payload
+        # Send security payload to N8N webhook
         security_payload = get_security_payload(user_id, "goal_update")
-        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
+        security_payload.update(goal_data)  # Include goal data in payload
+        n8n_response = await call_n8n_webhook(
+            "goal_update", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
         
         logger.info(f"Goal updated for user {user_id}: {goal_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
         return {"success": True, "goal": updated_goal}
         
     except Exception as e:
@@ -537,11 +559,18 @@ async def get_performance_metrics(user_id: str, security: dict = Depends(validat
             current_streak=7
         )
 
-        # Send security payload
+        # Send security payload to N8N webhook
         security_payload = get_security_payload(user_id, "metrics_view")
-        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
+        n8n_response = await call_n8n_webhook(
+            "metrics_view", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
         
         logger.info(f"Performance metrics retrieved for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
         return metrics
         
     except Exception as e:
