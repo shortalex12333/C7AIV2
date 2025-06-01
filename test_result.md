@@ -239,10 +239,8 @@ backend:
       - working: true
         agent: "testing"
         comment: "Tested all dashboard API endpoints with security headers. GET /api/user-dashboard/test-user-123, GET /api/user-goals/test-user-123, GET /api/performance-metrics/test-user-123, and POST /api/goal-update all accept and process security headers correctly. Security validation, logging, and payload generation are all functioning as expected."
-    implemented: true
-    working: "NA"
-    file: "/app/frontend/src/components/LandingPage.js"
-    stuck_count: 0
+
+frontend:
     priority: "high"
     needs_retesting: true
     status_history:
