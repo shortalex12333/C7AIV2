@@ -49,12 +49,7 @@ const EnhancedAuthFlow = () => {
         localStorage.setItem('celeste7_user_id', data.user_id);
         localStorage.setItem('celeste7_user_email', data.email);
         
-        // Set auth context
-        login({
-          userId: data.user_id,
-          email: data.email,
-          accessToken: data.access_token
-        });
+        // Auth data is stored in localStorage
 
         // Direct redirect to voice chat
         navigate('/voice-chat');
