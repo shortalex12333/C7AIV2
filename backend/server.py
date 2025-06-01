@@ -33,17 +33,49 @@ else:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
     logger.info("Supabase client initialized")
 
-# Security helper function (placeholder until we get the security file)
+# Security helper function with proper Celeste7 specification
 def get_security_payload(user_id: str, action: str) -> Dict[str, Any]:
-    """Generate security payload for N8N webhooks"""
+    """Generate security payload for N8N webhooks according to Celeste7 spec"""
     return {
         "user_id": user_id,
         "action": action,
         "timestamp": datetime.utcnow().isoformat(),
         "source": "celeste7_dashboard",
-        # TODO: Add security parameters from the PDF file
-        "security_token": "placeholder_token"
+        "request_id": str(uuid.uuid4()),
+        "session_id": f"session_{user_id}_{int(datetime.utcnow().timestamp())}"
     }
+
+def get_secure_headers(user_token: str = None, session_id: str = None) -> Dict[str, str]:
+    """Generate secure headers for webhook requests"""
+    return {
+        'X-User-Token': user_token or f"mock_token_{uuid.uuid4()}",
+        'X-Session-ID': session_id or f"session_{uuid.uuid4()}",
+        'X-Request-ID': str(uuid.uuid4()),
+        'X-Timestamp': datetime.utcnow().isoformat(),
+        'Content-Type': 'application/json'
+    }
+
+def validate_request_timing(timestamp_str: str) -> bool:
+    """Validate request timestamp is recent (within 5 minutes)"""
+    try:
+        request_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        now = datetime.utcnow()
+        time_diff = (now - request_time.replace(tzinfo=None)).total_seconds()
+        return time_diff <= 300  # 5 minutes
+    except:
+        return False
+
+def sanitize_string_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Sanitize string inputs (max 1000 chars, trim whitespace)"""
+    sanitized = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            sanitized[key] = value.strip()[:1000]
+        elif isinstance(value, dict):
+            sanitized[key] = sanitize_string_data(value)
+        else:
+            sanitized[key] = value
+    return sanitized
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
