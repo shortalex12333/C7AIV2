@@ -730,10 +730,10 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Toggle hands-free mode
+  // Toggle hands-free mode with better state management
   const toggleHandsFreeMode = async () => {
     if (isListening) {
-      console.log('Disabling hands-free mode...');
+      console.log('🔴 Disabling hands-free mode...');
       stopVoiceDetection();
       setIsListening(false);
       setConversationState(conversationStates.IDLE);
@@ -744,9 +744,16 @@ const Dashboard = () => {
         microphoneStreamRef.current = null;
       }
     } else {
-      console.log('Enabling hands-free mode...');
+      console.log('🟢 Enabling hands-free mode...');
       await initializeVoiceDetection();
     }
+  };
+
+  // Force state to listening (debug function)
+  const forceListeningState = () => {
+    console.log('🔧 FORCE: Setting state to LISTENING');
+    setConversationState(conversationStates.LISTENING);
+    console.log('🔧 FORCE: Current state should now be:', conversationStates.LISTENING);
   };
 
   const SimpleVoiceInterface = () => (
