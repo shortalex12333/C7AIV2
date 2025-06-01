@@ -70,10 +70,16 @@ const Dashboard = () => {
     INTERRUPTED: 'interrupted' // User interrupted during TTS
   };
 
-  // Debug: Log state changes
+  // Debug: Log state changes and sync refs
   useEffect(() => {
     console.log('🔄 Conversation state changed to:', conversationState);
+    conversationStateRef.current = conversationState; // Keep ref in sync
   }, [conversationState]);
+
+  useEffect(() => {
+    console.log('🎧 isListening changed to:', isListening);
+    isListeningRef.current = isListening; // Keep ref in sync
+  }, [isListening]);
 
   // Initialize hands-free voice detection with better error handling
   const initializeVoiceDetection = async () => {
