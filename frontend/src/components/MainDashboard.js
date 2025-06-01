@@ -77,7 +77,7 @@ const MainDashboard = ({ userId = "test-user-123" }) => {
 
   // Fetch performance metrics with security
   const fetchMetrics = async () => {
-    try:
+    try {
       // Check cache first
       const cacheKey = `metrics_${userId}`;
       const cached = ResponseCache.get(cacheKey);
