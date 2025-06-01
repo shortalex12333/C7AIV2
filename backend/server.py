@@ -22,16 +22,59 @@ load_dotenv(ROOT_DIR / '.env')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Supabase setup
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+# N8N Webhook URLs
+N8N_BASE_URL = "https://ventruk.app.n8n.cloud/webhook"
+N8N_WEBHOOKS = {
+    "dashboard_view": f"{N8N_BASE_URL}/dashboard-view",
+    "goals_view": f"{N8N_BASE_URL}/goals-view", 
+    "metrics_view": f"{N8N_BASE_URL}/metrics-view",
+    "goal_update": f"{N8N_BASE_URL}/goal-update",
+    "send_notification": f"{N8N_BASE_URL}/send-notification",
+    "intervention_queue": f"{N8N_BASE_URL}/intervention-queue",
+    "pattern_detected": f"{N8N_BASE_URL}/pattern-detected",
+    "weekly_report": f"{N8N_BASE_URL}/weekly-report",
+    "voice_interaction": f"{N8N_BASE_URL}/voice-interaction"  # existing one
+}
 
-if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
-    logger.error("Missing Supabase credentials")
-    supabase: Optional[Client] = None
-else:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    logger.info("Supabase client initialized")
+# Enhanced N8N webhook caller with proper security
+async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_token: str = None, session_id: str = None):
+    """Call N8N webhook with proper security headers and error handling"""
+    try:
+        webhook_url = N8N_WEBHOOKS.get(webhook_name)
+        if not webhook_url:
+            logger.warning(f"Unknown webhook: {webhook_name}")
+            return None
+            
+        # Prepare secure headers
+        headers = get_secure_headers(user_token, session_id)
+        
+        # Sanitize payload
+        sanitized_payload = sanitize_string_data(payload)
+        
+        logger.info(f"🔗 Calling N8N webhook: {webhook_name} → {webhook_url}")
+        logger.info(f"🔐 Security headers: {headers}")
+        logger.info(f"📦 Payload: {sanitized_payload}")
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                webhook_url,
+                json=sanitized_payload,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ N8N webhook {webhook_name} successful: {response.status_code}")
+                return response.json() if response.content else {"success": True}
+            else:
+                logger.warning(f"⚠️ N8N webhook {webhook_name} returned: {response.status_code}")
+                return {"success": False, "status_code": response.status_code}
+                
+    except httpx.TimeoutException:
+        logger.error(f"⏰ N8N webhook {webhook_name} timeout")
+        return {"success": False, "error": "timeout"}
+    except Exception as e:
+        logger.error(f"❌ N8N webhook {webhook_name} error: {str(e)}")
+        return {"success": False, "error": str(e)}
 
 # Security helper function with proper Celeste7 specification
 def get_security_payload(user_id: str, action: str) -> Dict[str, Any]:
