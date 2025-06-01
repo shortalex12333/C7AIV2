@@ -65,23 +65,46 @@ const Dashboard = () => {
     INTERRUPTED: 'interrupted' // User interrupted during TTS
   };
 
-  // Initialize hands-free voice detection
+  // Initialize hands-free voice detection with better error handling
   const initializeVoiceDetection = async () => {
     try {
-      console.log('Initializing hands-free voice detection...');
+      console.log('🎤 Initializing hands-free voice detection...');
       
-      // Get microphone access
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia not supported in this browser');
+      }
+      
+      // Get microphone access with detailed constraints
+      console.log('📱 Requesting microphone permissions...');
       microphoneStreamRef.current = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 16000, // Optimal for voice detection
+          sampleRate: 16000,
           channelCount: 1
         }
       });
 
+      console.log('✅ Microphone access granted');
+      console.log('🎵 Audio stream details:', {
+        active: microphoneStreamRef.current.active,
+        tracks: microphoneStreamRef.current.getAudioTracks().length,
+        trackSettings: microphoneStreamRef.current.getAudioTracks()[0]?.getSettings()
+      });
+
       // Create audio context for real-time analysis
+      console.log('🎧 Creating audio context...');
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Resume audio context if suspended (required by some browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        console.log('▶️ Resuming suspended audio context...');
+        await audioContextRef.current.resume();
+      }
+      
+      console.log('🎧 Audio context state:', audioContextRef.current.state);
+      
       const source = audioContextRef.current.createMediaStreamSource(microphoneStreamRef.current);
       
       // Create analyser for voice activity detection
@@ -89,17 +112,41 @@ const Dashboard = () => {
       analyserRef.current.fftSize = 256;
       analyserRef.current.smoothingTimeConstant = 0.8;
       
+      console.log('📊 Analyser created:', {
+        fftSize: analyserRef.current.fftSize,
+        frequencyBinCount: analyserRef.current.frequencyBinCount,
+        smoothingTimeConstant: analyserRef.current.smoothingTimeConstant
+      });
+      
       source.connect(analyserRef.current);
+      console.log('🔗 Audio pipeline connected');
       
       // Start continuous voice monitoring
       startVoiceDetection();
       setConversationState(conversationStates.LISTENING);
       setIsListening(true);
       
-      console.log('Voice detection initialized successfully');
+      console.log('✅ Voice detection initialized successfully');
+      console.log('🎯 Voice threshold:', voiceThreshold, 'Silence threshold:', silenceThreshold);
+      
     } catch (error) {
-      console.error('Failed to initialize voice detection:', error);
-      alert('Please allow microphone access for hands-free operation');
+      console.error('❌ Failed to initialize voice detection:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      if (error.name === 'NotAllowedError') {
+        alert('❌ Microphone access denied. Please allow microphone permissions and refresh the page to use hands-free mode.');
+      } else if (error.name === 'NotFoundError') {
+        alert('❌ No microphone found. Please connect a microphone and refresh the page.');
+      } else {
+        alert('❌ Failed to initialize voice detection: ' + error.message);
+      }
+      
+      setConversationState(conversationStates.IDLE);
+      setIsListening(false);
     }
   };
 
