@@ -84,6 +84,62 @@ class VoiceChatRequest(BaseModel):
     audioBlob: str  # Base64 encoded audio
     sessionID: Optional[str] = None
 
+# Pydantic models for API requests and responses
+class VoiceUploadRequest(BaseModel):
+    user_id: str
+    session_id: str
+    audio_data: str  # Base64 encoded audio
+    audio_mime_type: str = "audio/wav"
+    audio_duration: float = 0.0
+    conversation_context: Optional[str] = None
+
+class AuthRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class SignUpRequest(BaseModel):
+    email: EmailStr  
+    password: str
+    full_name: str
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user_id: str
+    email: str
+
+# Dashboard-specific models
+class DashboardData(BaseModel):
+    user_id: str
+    current_streak: int = 0
+    last_workout: Optional[str] = None
+    last_workout_days_ago: Optional[int] = None
+    primary_goal: Optional[str] = None
+    pending_interventions: int = 0
+    greeting_message: str
+    total_sessions: int = 0
+    last_session: Optional[str] = None
+
+class Goal(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    description: Optional[str] = None
+    progress: float = 0.0  # 0-100 percentage
+    status: str = "active"  # active, completed, archived
+    created_at: datetime
+    updated_at: datetime
+    target_date: Optional[datetime] = None
+
+class PerformanceMetrics(BaseModel):
+    user_id: str
+    active_days: int = 0
+    goal_progress_avg: float = 0.0
+    workout_consistency: float = 0.0
+    daily_interaction_count: int = 0
+    satisfaction_rate: float = 0.0
+    current_streak: int = 0
+
 # Webhook URLs - Production
 SIGNUP_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook/auth/sign-up"
 SIGNIN_WEBHOOK = "https://ventruk.app.n8n.cloud/webhook/auth/sign-in"
