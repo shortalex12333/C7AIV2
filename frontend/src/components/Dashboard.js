@@ -810,7 +810,18 @@ const Dashboard = () => {
   const forceListeningState = () => {
     console.log('🔧 FORCE: Setting state to LISTENING');
     setConversationState(conversationStates.LISTENING);
-    console.log('🔧 FORCE: Current state should now be:', conversationStates.LISTENING);
+    conversationStateRef.current = conversationStates.LISTENING;
+    setIsListening(true);
+    isListeningRef.current = true;
+    
+    setTimeout(() => {
+      console.log('🔧 FORCE: Verification after 200ms:', {
+        stateRef: conversationStateRef.current,
+        isListeningRef: isListeningRef.current,
+        expectedState: conversationStates.LISTENING,
+        stateMatches: conversationStateRef.current === conversationStates.LISTENING
+      });
+    }, 200);
   };
 
   const SimpleVoiceInterface = () => (
