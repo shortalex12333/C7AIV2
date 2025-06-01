@@ -925,5 +925,146 @@ class BackendAPITest(unittest.TestCase):
         
         logger.info("All N8N webhook endpoints tested successfully")
 
+    def test_conversation_history_endpoint(self):
+        """Test the conversation history endpoint"""
+        logger.info("Testing conversation history endpoint")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        # Test basic endpoint without query parameters
+        response = requests.get(
+            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}",
+            headers=security_headers
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Conversation history response status: {response.status_code}")
+        logger.info(f"Conversation history response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("conversations", data)
+        self.assertIn("pagination", data)
+        self.assertIn("n8n_response", data)
+        
+        # Verify pagination structure
+        pagination = data["pagination"]
+        self.assertIn("total", pagination)
+        self.assertIn("limit", pagination)
+        self.assertIn("offset", pagination)
+        self.assertIn("has_more", pagination)
+        
+        # Verify conversations structure
+        conversations = data["conversations"]
+        self.assertIsInstance(conversations, list)
+        if conversations:
+            conversation = conversations[0]
+            self.assertIn("id", conversation)
+            self.assertIn("timestamp", conversation)
+            self.assertIn("user_input", conversation)
+            self.assertIn("ai_response", conversation)
+            self.assertIn("category", conversation)
+        
+        logger.info("Conversation history endpoint basic test passed")
+        
+        # Test with limit parameter
+        logger.info("Testing conversation history endpoint with limit=3")
+        limit_response = requests.get(
+            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?limit=3",
+            headers=security_headers
+        )
+        
+        self.assertEqual(limit_response.status_code, 200)
+        limit_data = limit_response.json()
+        
+        # Verify limit is applied
+        self.assertLessEqual(len(limit_data["conversations"]), 3)
+        self.assertEqual(limit_data["pagination"]["limit"], 3)
+        
+        logger.info("Conversation history endpoint limit test passed")
+        
+        # Test with category filter
+        logger.info("Testing conversation history endpoint with category=fitness")
+        category_response = requests.get(
+            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?category=fitness",
+            headers=security_headers
+        )
+        
+        self.assertEqual(category_response.status_code, 200)
+        category_data = category_response.json()
+        
+        # Verify category filter is applied
+        for conversation in category_data["conversations"]:
+            self.assertEqual(conversation["category"], "fitness")
+        
+        logger.info("Conversation history endpoint category filter test passed")
+        
+        # Test with search parameter
+        logger.info("Testing conversation history endpoint with search=deadlift")
+        search_response = requests.get(
+            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?search=deadlift",
+            headers=security_headers
+        )
+        
+        self.assertEqual(search_response.status_code, 200)
+        search_data = search_response.json()
+        
+        # Verify search filter is applied (if any results)
+        if search_data["conversations"]:
+            found = False
+            for conversation in search_data["conversations"]:
+                if "deadlift" in conversation["user_input"].lower() or "deadlift" in conversation["ai_response"].lower():
+                    found = True
+                    break
+            self.assertTrue(found, "Search term 'deadlift' not found in any conversation")
+        
+        logger.info("Conversation history endpoint search filter test passed")
+        
+        # Test with multiple parameters
+        logger.info("Testing conversation history endpoint with multiple parameters")
+        multi_param_response = requests.get(
+            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?limit=3&category=fitness&search=deadlift",
+            headers=security_headers
+        )
+        
+        self.assertEqual(multi_param_response.status_code, 200)
+        multi_param_data = multi_param_response.json()
+        
+        # Verify limit is applied
+        self.assertLessEqual(len(multi_param_data["conversations"]), 3)
+        
+        # Verify category filter is applied (if any results)
+        for conversation in multi_param_data["conversations"]:
+            self.assertEqual(conversation["category"], "fitness")
+        
+        # Verify search filter is applied (if any results)
+        if multi_param_data["conversations"]:
+            found = False
+            for conversation in multi_param_data["conversations"]:
+                if "deadlift" in conversation["user_input"].lower() or "deadlift" in conversation["ai_response"].lower():
+                    found = True
+                    break
+            self.assertTrue(found, "Search term 'deadlift' not found in any conversation")
+        
+        logger.info("Conversation history endpoint multiple parameters test passed")
+        
+        # Verify N8N webhook call
+        self.assertIn("n8n_response", multi_param_data)
+        logger.info(f"N8N webhook response: {multi_param_data['n8n_response']}")
+        
+        logger.info("Conversation history endpoint test passed")
+
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
