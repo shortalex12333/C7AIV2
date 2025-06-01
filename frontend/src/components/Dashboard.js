@@ -212,9 +212,9 @@ const Dashboard = () => {
     // RULE 2: Voice detected during TTS playback - INTERRUPT IMMEDIATELY
     else if (normalizedVolume > voiceThreshold && 
              averageVolume > 16 && 
-             (conversationState === conversationStates.PLAYING || conversationState === 'playing')) {
+             conversationState === 'playing') {
       
-      console.log('⚡ INTERRUPTION detected during TTS! Volume:', Math.round(averageVolume), 'Stopping AI...');
+      console.log('⚡ INTERRUPTION! Volume:', Math.round(averageVolume), 'Stopping TTS...');
       
       // Stop current TTS immediately
       if (window.currentTTSAudio) {
@@ -224,22 +224,22 @@ const Dashboard = () => {
       }
       
       setIsPlayingResponse(null);
-      setConversationState(conversationStates.INTERRUPTED);
+      setConversationState('interrupted');
       
-      // Start new recording after brief delay
+      // Start new recording immediately
       setTimeout(() => {
-        console.log('🎤 Starting new recording after interruption...');
-        setConversationState(conversationStates.RECORDING);
+        console.log('🎤 New recording after interruption...');
+        setConversationState('recording');
         startHandsFreeRecording();
       }, 100);
     }
     
     // RULE 3: Silence detected while recording (volume < 16) - start silence timer
-    else if (averageVolume < 16 && (conversationState === conversationStates.RECORDING || conversationState === 'recording')) {
+    else if (averageVolume < 16 && conversationState === 'recording') {
       if (!silenceTimerRef.current) {
-        console.log('🔇 Silence detected (volume < 16), starting 1200ms timeout... Volume:', Math.round(averageVolume));
+        console.log('🔇 SILENCE detected, 1200ms timer started. Volume:', Math.round(averageVolume));
         silenceTimerRef.current = setTimeout(() => {
-          console.log('⏰ Silence timeout reached (1200ms), stopping recording...');
+          console.log('⏰ TIMEOUT! Stopping recording and sending to webhook...');
           stopHandsFreeRecording();
         }, silenceTimeout);
       }
@@ -247,10 +247,10 @@ const Dashboard = () => {
     
     // RULE 4: Voice resumed during silence timer (volume > 16) - cancel timeout  
     else if (averageVolume > 16 && 
-             (conversationState === conversationStates.RECORDING || conversationState === 'recording') && 
+             conversationState === 'recording' && 
              silenceTimerRef.current) {
       
-      console.log('🎤 Voice resumed (volume > 16), canceling silence timeout... Volume:', Math.round(averageVolume));
+      console.log('🎤 VOICE RESUMED! Canceling timeout. Volume:', Math.round(averageVolume));
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
