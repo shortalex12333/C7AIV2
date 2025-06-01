@@ -39,6 +39,10 @@ const Dashboard = () => {
   const [voiceLevel, setVoiceLevel] = useState(0);
   const [silenceTimer, setSilenceTimer] = useState(null);
   
+  // Use refs to avoid stale closure issues in voice detection
+  const conversationStateRef = useRef('idle');
+  const isListeningRef = useRef(false);
+  
   // Voice detection configuration (adjusted based on real-world testing)
   const [voiceThreshold, setVoiceThreshold] = useState(0.063); // 16/255 = 0.063 (volume > 16)
   const [silenceThreshold, setSilenceThreshold] = useState(0.063); // Same as voice threshold
