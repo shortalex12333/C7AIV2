@@ -1,20 +1,49 @@
-from fastapi import FastAPI, APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
-import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
 import uuid
-from datetime import datetime
-import httpx
 import json
+import logging
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, List
+from fastapi import FastAPI, APIRouter, HTTPException, status, UploadFile, File, Form, Depends
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, EmailStr
+import httpx
+from supabase import create_client, Client
+from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient
+from pathlib import Path
 
+# Load environment variables
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Supabase setup
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+
+if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+    logger.error("Missing Supabase credentials")
+    supabase: Optional[Client] = None
+else:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    logger.info("Supabase client initialized")
+
+# Security helper function (placeholder until we get the security file)
+def get_security_payload(user_id: str, action: str) -> Dict[str, Any]:
+    """Generate security payload for N8N webhooks"""
+    return {
+        "user_id": user_id,
+        "action": action,
+        "timestamp": datetime.utcnow().isoformat(),
+        "source": "celeste7_dashboard",
+        # TODO: Add security parameters from the PDF file
+        "security_token": "placeholder_token"
+    }
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
