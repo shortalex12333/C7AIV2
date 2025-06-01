@@ -151,7 +151,7 @@ const Dashboard = () => {
     }
   };
 
-  // Voice Activity Detection algorithm with debug logging
+  // Enhanced Voice Activity Detection with minimum volume requirements
   const detectVoiceActivity = () => {
     if (!analyserRef.current) {
       console.log('No analyser available');
@@ -165,40 +165,70 @@ const Dashboard = () => {
     const averageVolume = dataArray.reduce((a, b) => a + b) / dataArray.length;
     const normalizedVolume = averageVolume / 255; // Normalize to 0-1
     
-    // Debug logging every 3 seconds to see if we're getting audio data
+    // Debug logging every 3 seconds to monitor levels
     if (Date.now() % 3000 < 300) {
-      console.log('Voice Detection Debug:', {
-        averageVolume,
-        normalizedVolume,
+      console.log('🎤 Voice Detection Debug:', {
+        averageVolume: Math.round(averageVolume * 10) / 10,
+        normalizedVolume: Math.round(normalizedVolume * 1000) / 1000,
         voiceThreshold,
-        silenceThreshold,
         conversationState,
-        dataArrayLength: dataArray.length,
-        sampleData: Array.from(dataArray.slice(0, 10)) // First 10 samples
+        aboveMinimum: averageVolume > 16,
+        rawVolume16Plus: averageVolume > 16 ? '✅ LOUD ENOUGH' : '❌ Too quiet'
       });
     }
 
-    // Voice detected - start recording
-    if (normalizedVolume > voiceThreshold && conversationState === conversationStates.LISTENING) {
-      console.log('🎤 Voice activity detected! Volume:', normalizedVolume, 'Threshold:', voiceThreshold);
+    // RULE 1: Voice detected AND above minimum volume (16+) - start recording
+    if (normalizedVolume > voiceThreshold && 
+        averageVolume > 16 && 
+        conversationState === conversationStates.LISTENING) {
+      
+      console.log('🎤 Voice activity detected! Volume:', Math.round(averageVolume), 'Raw Volume > 16 ✅');
       setConversationState(conversationStates.RECORDING);
       startHandsFreeRecording();
     }
     
-    // Silence detected while recording - start silence timer
-    else if (normalizedVolume < silenceThreshold && conversationState === conversationStates.RECORDING) {
+    // RULE 2: Voice detected during TTS playback - INTERRUPT IMMEDIATELY
+    else if (normalizedVolume > voiceThreshold && 
+             averageVolume > 16 && 
+             conversationState === conversationStates.PLAYING) {
+      
+      console.log('⚡ INTERRUPTION detected during TTS! Volume:', Math.round(averageVolume), 'Stopping AI...');
+      
+      // Stop current TTS immediately
+      if (window.currentTTSAudio) {
+        window.currentTTSAudio.pause();
+        window.currentTTSAudio.currentTime = 0;
+        window.currentTTSAudio = null;
+      }
+      
+      setIsPlayingResponse(null);
+      setConversationState(conversationStates.INTERRUPTED);
+      
+      // Start new recording after brief delay
+      setTimeout(() => {
+        console.log('🎤 Starting new recording after interruption...');
+        setConversationState(conversationStates.RECORDING);
+        startHandsFreeRecording();
+      }, 100);
+    }
+    
+    // RULE 3: Silence detected while recording (volume < 16) - start silence timer
+    else if (averageVolume < 16 && conversationState === conversationStates.RECORDING) {
       if (!silenceTimerRef.current) {
-        console.log('🔇 Silence detected, starting timeout... Volume:', normalizedVolume);
+        console.log('🔇 Silence detected (volume < 16), starting 1200ms timeout... Volume:', Math.round(averageVolume));
         silenceTimerRef.current = setTimeout(() => {
-          console.log('⏰ Silence timeout reached, stopping recording...');
+          console.log('⏰ Silence timeout reached (1200ms), stopping recording...');
           stopHandsFreeRecording();
         }, silenceTimeout);
       }
     }
     
-    // Voice resumed during silence timer - cancel timeout
-    else if (normalizedVolume > voiceThreshold && conversationState === conversationStates.RECORDING && silenceTimerRef.current) {
-      console.log('🎤 Voice resumed, canceling silence timeout... Volume:', normalizedVolume);
+    // RULE 4: Voice resumed during silence timer (volume > 16) - cancel timeout  
+    else if (averageVolume > 16 && 
+             conversationState === conversationStates.RECORDING && 
+             silenceTimerRef.current) {
+      
+      console.log('🎤 Voice resumed (volume > 16), canceling silence timeout... Volume:', Math.round(averageVolume));
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
