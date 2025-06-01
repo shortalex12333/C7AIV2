@@ -853,6 +853,12 @@ const Dashboard = () => {
               <p className="text-xs text-green-400">
                 📢 Speak with volume 16+ to trigger recording
               </p>
+              <button 
+                onClick={forceListeningState}
+                className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded"
+              >
+                🔧 Force Listening State (Debug)
+              </button>
             </div>
           </div>
         )}
