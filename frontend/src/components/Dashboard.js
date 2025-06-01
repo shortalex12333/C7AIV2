@@ -843,73 +843,49 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* Chat Messages */}
+        {/* Chat Messages - Simple Version */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <AnimatePresence>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                  message.type === 'user'
+                    ? 'chat-bubble-user text-white'
+                    : `chat-bubble-ai text-white ${
+                        isPlayingResponse === message.id ? 'border-2 border-accent-teal' : ''
+                      }`
+                }`}
               >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                    message.type === 'user'
-                      ? 'chat-bubble-user text-white'
-                      : `chat-bubble-ai text-white ${
-                          isPlayingResponse === message.id ? 'animate-pulse ring-2 ring-accent-teal/50' : ''
-                        }`
-                  }`}
-                >
-                  <p className="text-sm">{message.content}</p>
-                  
-                  {/* Enhanced audio/state indicators for AI messages */}
-                  {message.type === 'ai' && (
-                    <div className="mt-2">
-                      {isPlayingResponse === message.id && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          className="flex items-center space-x-2 text-xs text-accent-teal"
-                        >
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                            className="w-2 h-2 bg-accent-teal rounded-full"
-                          />
-                          <span>🔊 AI is speaking...</span>
-                        </motion.div>
-                      )}
-                      
-                      {conversationState === conversationStates.INTERRUPTED && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center space-x-2 text-xs text-yellow-400 mt-1"
-                        >
-                          <motion.div
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{ duration: 0.5, repeat: 2 }}
-                            className="text-yellow-400"
-                          >
-                            ⚡
-                          </motion.div>
-                          <span>Interrupted - listening for new input</span>
-                        </motion.div>
-                      )}
-                    </div>
-                  )}
-                  
-                  <p className="text-xs mt-2 opacity-70">
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                <p className="text-sm">{message.content}</p>
+                
+                {/* Simple audio/state indicators for AI messages */}
+                {message.type === 'ai' && (
+                  <div className="mt-2">
+                    {isPlayingResponse === message.id && (
+                      <div className="flex items-center space-x-2 text-xs text-accent-teal">
+                        <div className="w-2 h-2 bg-accent-teal rounded-full"></div>
+                        <span>🔊 AI is speaking...</span>
+                      </div>
+                    )}
+                    
+                    {conversationState === conversationStates.INTERRUPTED && (
+                      <div className="flex items-center space-x-2 text-xs text-yellow-400 mt-1">
+                        <span>⚡</span>
+                        <span>Interrupted - listening for new input</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <p className="text-xs mt-2 opacity-70">
+                  {message.timestamp.toLocaleTimeString()}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Enhanced Voice Interface */}
