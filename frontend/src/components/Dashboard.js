@@ -703,12 +703,11 @@ const Dashboard = () => {
   // Keep sendAudioToAPI as alias for backward compatibility
   const sendAudioToAPI = uploadToN8n;
 
-  // Initialize hands-free mode on component mount
+  // Initialize hands-free mode MANUALLY (removed auto-start to fix state conflicts)
   useEffect(() => {
-    // Auto-start hands-free mode when component mounts
-    initializeVoiceDetection();
+    console.log('🔧 Component mounted - manual initialization required');
     
-    // Cleanup on unmount
+    // Cleanup on unmount only
     return () => {
       stopVoiceDetection();
       
