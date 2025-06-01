@@ -404,6 +404,52 @@ class BackendAPITest(unittest.TestCase):
         self.assertIn("created_at", goal)
         
         logger.info("User goals endpoint test passed")
+        
+    def test_user_goals_endpoint_with_security_headers(self):
+        """Test the user goals endpoint with security headers"""
+        logger.info("Testing user goals endpoint with security headers")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.get(
+            f"{BACKEND_URL}/api/user-goals/{self.test_user_id}",
+            headers=security_headers
+        )
+        
+        # Log the response for debugging
+        logger.info(f"User goals with security headers response status: {response.status_code}")
+        logger.info(f"User goals with security headers response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("goals", data)
+        self.assertIn("total", data)
+        self.assertIsInstance(data["goals"], list)
+        self.assertGreater(len(data["goals"]), 0)
+        
+        # Verify the structure of the first goal
+        goal = data["goals"][0]
+        self.assertIn("id", goal)
+        self.assertIn("user_id", goal)
+        self.assertEqual(goal["user_id"], self.test_user_id)
+        self.assertIn("title", goal)
+        self.assertIn("progress", goal)
+        self.assertIn("status", goal)
+        self.assertIn("created_at", goal)
+        
+        logger.info("User goals endpoint with security headers test passed")
     
     def test_performance_metrics_endpoint(self):
         """Test the performance metrics endpoint"""
