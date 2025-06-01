@@ -36,13 +36,17 @@ N8N_WEBHOOKS = {
 }
 
 # Enhanced N8N webhook caller with proper security
-async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_token: str = None, session_id: str = None):
+async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_token: str = None, session_id: str = None, user_id: str = None):
     """Call N8N webhook with proper security headers and error handling"""
     try:
         webhook_url = N8N_WEBHOOKS.get(webhook_name)
         if not webhook_url:
             logger.warning(f"Unknown webhook: {webhook_name}")
             return None
+        
+        # Handle dynamic :userId parameter for specific webhooks
+        if webhook_name in ["intervention_queue", "weekly_report"] and user_id:
+            webhook_url = f"{webhook_url}/{user_id}"
             
         # Prepare secure headers
         headers = get_secure_headers(user_token, session_id)
@@ -66,6 +70,7 @@ async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_toke
                 return response.json() if response.content else {"success": True}
             else:
                 logger.warning(f"⚠️ N8N webhook {webhook_name} returned: {response.status_code}")
+                logger.warning(f"Response body: {response.text}")
                 return {"success": False, "status_code": response.status_code}
                 
     except httpx.TimeoutException:
