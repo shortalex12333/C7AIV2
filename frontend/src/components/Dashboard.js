@@ -888,9 +888,9 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Enhanced Voice Interface */}
+        {/* Simple Voice Interface */}
         <div className="border-t border-gray-800">
-          <EnhancedVoiceInterface />
+          <SimpleVoiceInterface />
         </div>
 
         {/* Quick Reply Pills */}
