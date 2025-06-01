@@ -5,6 +5,7 @@ import './App.css';
 import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
+import MainDashboard from './components/MainDashboard';
 import OnboardingFlow from './components/OnboardingFlow';
 import Settings from './components/Settings';
 
