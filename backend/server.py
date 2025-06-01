@@ -352,7 +352,7 @@ async def health_check():
 
 # Dashboard API endpoints
 @app.get("/api/user-dashboard/{user_id}")
-async def get_user_dashboard(user_id: str):
+async def get_user_dashboard(user_id: str, security: dict = Depends(validate_security_headers)):
     """Get dashboard data for a user"""
     try:
         # Get current time for greeting
@@ -379,9 +379,9 @@ async def get_user_dashboard(user_id: str):
 
         # Send security payload to N8N webhook
         security_payload = get_security_payload(user_id, "dashboard_view")
+        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
         
-        # TODO: Send to N8N webhook when URLs are provided
-        logger.info(f"Dashboard accessed by user {user_id}")
+        logger.info(f"Dashboard accessed by user {user_id} with security: {security['request_id']}")
         
         return dashboard_data
         
@@ -390,7 +390,7 @@ async def get_user_dashboard(user_id: str):
         raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
 
 @app.get("/api/user-goals/{user_id}")
-async def get_user_goals(user_id: str):
+async def get_user_goals(user_id: str, security: dict = Depends(validate_security_headers)):
     """Get goals for a user"""
     try:
         # Mock goals data
@@ -421,8 +421,9 @@ async def get_user_goals(user_id: str):
 
         # Send security payload
         security_payload = get_security_payload(user_id, "goals_view")
+        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
         
-        logger.info(f"Goals retrieved for user {user_id}")
+        logger.info(f"Goals retrieved for user {user_id} with security: {security['request_id']}")
         return {"goals": goals, "total": len(goals)}
         
     except Exception as e:
@@ -430,9 +431,12 @@ async def get_user_goals(user_id: str):
         raise HTTPException(status_code=500, detail=f"Goals error: {str(e)}")
 
 @app.post("/api/goal-update")
-async def update_goal(goal_data: dict):
+async def update_goal(goal_data: dict, security: dict = Depends(validate_security_headers)):
     """Update or create a goal"""
     try:
+        # Sanitize input data
+        goal_data = sanitize_string_data(goal_data)
+        
         user_id = goal_data.get("user_id")
         goal_id = goal_data.get("goal_id", str(uuid.uuid4()))
         
@@ -451,8 +455,9 @@ async def update_goal(goal_data: dict):
 
         # Send security payload
         security_payload = get_security_payload(user_id, "goal_update")
+        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
         
-        logger.info(f"Goal updated for user {user_id}: {goal_id}")
+        logger.info(f"Goal updated for user {user_id}: {goal_id} with security: {security['request_id']}")
         return {"success": True, "goal": updated_goal}
         
     except Exception as e:
@@ -460,7 +465,7 @@ async def update_goal(goal_data: dict):
         raise HTTPException(status_code=500, detail=f"Goal update error: {str(e)}")
 
 @app.get("/api/performance-metrics/{user_id}")
-async def get_performance_metrics(user_id: str):
+async def get_performance_metrics(user_id: str, security: dict = Depends(validate_security_headers)):
     """Get performance metrics for a user"""
     try:
         # Mock performance data
@@ -476,8 +481,9 @@ async def get_performance_metrics(user_id: str):
 
         # Send security payload
         security_payload = get_security_payload(user_id, "metrics_view")
+        secure_headers = get_secure_headers(security.get("user_token"), security.get("session_id"))
         
-        logger.info(f"Performance metrics retrieved for user {user_id}")
+        logger.info(f"Performance metrics retrieved for user {user_id} with security: {security['request_id']}")
         return metrics
         
     except Exception as e:
