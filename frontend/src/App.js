@@ -3,9 +3,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 import LandingPage from './components/LandingPage';
+import SimplifiedLanding from './components/SimplifiedLanding';
 import AuthPage from './components/AuthPage';
+import EnhancedAuthFlow from './components/EnhancedAuthFlow';
 import Dashboard from './components/Dashboard';
 import MainDashboard from './components/MainDashboard';
+import EnhancedVoiceChat from './components/EnhancedVoiceChat';
 import OnboardingFlow from './components/OnboardingFlow';
 import Settings from './components/Settings';
 
