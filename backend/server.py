@@ -3,12 +3,12 @@ import json
 import uuid
 import logging
 import httpx
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Annotated
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends, Header, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pymongo import MongoClient
 from bson import ObjectId
 from bson.json_util import dumps
@@ -135,30 +135,14 @@ async def get_current_user(authorization: str = Header(None)):
     return payload
 
 # Models
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
-        return ObjectId(v)
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
-
 class MongoBaseModel(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id")
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        populate_by_name=True,
+        json_encoders={ObjectId: str}
+    )
     
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {
-            ObjectId: str
-        }
+    id: Optional[str] = Field(None, alias="_id")
 
 class StatusCheck(BaseModel):
     service: str
