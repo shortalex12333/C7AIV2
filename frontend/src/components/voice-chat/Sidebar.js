@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { secureApiCall, initializeSession } from '../utils/security';
+import { secureApiCall, initializeSession } from '../../utils/security';
 
 const Sidebar = ({ isOpen, onToggle, userId }) => {
   const [conversationHistory, setConversationHistory] = useState([]);
