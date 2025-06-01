@@ -197,14 +197,15 @@ const Dashboard = () => {
       });
     }
 
-    // RULE 1: Voice detected AND above minimum volume (16+) - start recording
+    // FIXED RULE 1: Voice detected AND above minimum volume (16+) - start recording
+    // Check for BOTH 'listening' and 'idle' states since state management is buggy
     if (normalizedVolume > voiceThreshold && 
         averageVolume > 16 && 
-        (conversationState === conversationStates.LISTENING || conversationState === 'listening')) {
+        (conversationState === 'listening' || conversationState === 'idle')) {
       
-      console.log('🎤 Voice activity detected! Volume:', Math.round(averageVolume), 'Raw Volume > 16 ✅');
-      console.log('🔄 State transition: LISTENING → RECORDING');
-      setConversationState(conversationStates.RECORDING);
+      console.log('🎤 VOICE TRIGGER! Volume:', Math.round(averageVolume), 'State:', conversationState);
+      console.log('🔄 FORCING: IDLE/LISTENING → RECORDING');
+      setConversationState('recording');
       startHandsFreeRecording();
     }
     
