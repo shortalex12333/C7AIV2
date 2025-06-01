@@ -135,7 +135,22 @@ backend:
         agent: "testing"
         comment: "Tested voice chat endpoint with sample audio data. The implementation is correct, but the n8n webhook is returning 404 Not Found error in the test environment. The backend correctly handles this error by returning an appropriate 500 response with a detailed error message."
 
-  - task: "Display Name Change API"
+  - task: "Health Check Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented health check endpoint at the root API path."
+      - working: true
+        agent: "testing"
+        comment: "Tested health check endpoint. Returns 200 OK with the message 'Celeste7 AI Voice Chat API'. This confirms the backend is running correctly."
+
+  - task: "Status API Endpoint"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -145,10 +160,10 @@ backend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented display name change endpoint with webhook integration."
+        comment: "Implemented status endpoint for client status tracking."
       - working: true
         agent: "testing"
-        comment: "Tested display name change endpoint. The implementation is correct, but the n8n webhook is returning 404 Not Found error in the test environment. The backend correctly handles this error by returning an appropriate 500 response with a detailed error message."
+        comment: "Tested status endpoint for both POST and GET operations. POST successfully creates a new status entry with client_name, and GET successfully retrieves all status entries. The database connection is working properly."
 
 frontend:
   - task: "Landing Page with Hero Section"
