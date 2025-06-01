@@ -540,6 +540,7 @@ const Dashboard = () => {
   const uploadToN8n = async (wavBlob) => {
     try {
       setConversationState(conversationStates.PROCESSING);
+      conversationStateRef.current = conversationStates.PROCESSING;
       
       // Enhanced security payload
       const enhancedPayload = {
