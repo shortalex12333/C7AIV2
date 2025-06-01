@@ -145,15 +145,16 @@ const Dashboard = () => {
       setConversationState(conversationStates.LISTENING);
       setIsListening(true);
       
-      // Double-check state after brief delay
+      // Wait for state to update and verify
       setTimeout(() => {
-        console.log('🔍 State check after initialization:', {
-          conversationState: conversationState,
+        console.log('🔍 State verification after initialization:', {
+          stateValue: conversationStateRef.current,
+          isListeningValue: isListeningRef.current,
           LISTENING_constant: conversationStates.LISTENING,
-          isListening: isListening,
-          stateMatches: conversationState === conversationStates.LISTENING
+          stateMatches: conversationStateRef.current === conversationStates.LISTENING,
+          listenerActive: isListeningRef.current
         });
-      }, 100);
+      }, 200);
       
       console.log('✅ Voice detection initialized successfully');
       console.log('🎯 Voice threshold:', voiceThreshold, 'Silence threshold:', silenceThreshold);
