@@ -577,6 +577,139 @@ async def get_performance_metrics(user_id: str, security: dict = Depends(validat
         logger.error(f"Metrics error for user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Metrics error: {str(e)}")
 
+# Additional N8N webhook endpoints
+@app.post("/api/send-notification")
+async def send_notification(notification_data: dict, security: dict = Depends(validate_security_headers)):
+    """Send proactive notification"""
+    try:
+        # Sanitize input data
+        notification_data = sanitize_string_data(notification_data)
+        
+        user_id = notification_data.get("user_id")
+        
+        # Send to N8N webhook
+        security_payload = get_security_payload(user_id, "send_notification")
+        security_payload.update(notification_data)
+        n8n_response = await call_n8n_webhook(
+            "send_notification", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
+        
+        logger.info(f"Notification sent for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
+        
+        return {"success": True, "notification_sent": True, "n8n_response": n8n_response}
+        
+    except Exception as e:
+        logger.error(f"Send notification error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Send notification error: {str(e)}")
+
+@app.get("/api/intervention-queue/{user_id}")
+async def get_intervention_queue(user_id: str, security: dict = Depends(validate_security_headers)):
+    """Get intervention queue for user"""
+    try:
+        # Send to N8N webhook
+        security_payload = get_security_payload(user_id, "intervention_queue")
+        n8n_response = await call_n8n_webhook(
+            "intervention_queue", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
+        
+        logger.info(f"Intervention queue retrieved for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
+        
+        # Mock response for now
+        return {
+            "interventions": [
+                {
+                    "id": "int_001",
+                    "message": "You haven't logged a workout in 3 days. Time to get moving!",
+                    "type": "workout_reminder",
+                    "priority": "medium",
+                    "actionRequired": True
+                }
+            ],
+            "total": 1,
+            "n8n_response": n8n_response
+        }
+        
+    except Exception as e:
+        logger.error(f"Intervention queue error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Intervention queue error: {str(e)}")
+
+@app.post("/api/pattern-detected")
+async def pattern_detected(pattern_data: dict, security: dict = Depends(validate_security_headers)):
+    """Report detected pattern"""
+    try:
+        # Sanitize input data
+        pattern_data = sanitize_string_data(pattern_data)
+        
+        user_id = pattern_data.get("user_id")
+        
+        # Send to N8N webhook
+        security_payload = get_security_payload(user_id, "pattern_detected")
+        security_payload.update(pattern_data)
+        n8n_response = await call_n8n_webhook(
+            "pattern_detected", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
+        
+        logger.info(f"Pattern detected for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
+        
+        return {"success": True, "pattern_processed": True, "n8n_response": n8n_response}
+        
+    except Exception as e:
+        logger.error(f"Pattern detected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Pattern detected error: {str(e)}")
+
+@app.get("/api/weekly-report/{user_id}")
+async def get_weekly_report(user_id: str, security: dict = Depends(validate_security_headers)):
+    """Get weekly report for user"""
+    try:
+        # Send to N8N webhook
+        security_payload = get_security_payload(user_id, "weekly_report")
+        n8n_response = await call_n8n_webhook(
+            "weekly_report", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
+        
+        logger.info(f"Weekly report retrieved for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
+        
+        # Mock response for now
+        return {
+            "report": {
+                "week_start": "2024-05-26",
+                "week_end": "2024-06-01",
+                "active_days": 5,
+                "workouts_completed": 3,
+                "goals_progress": 15.2,
+                "key_insights": [
+                    "Strong consistency with morning routine",
+                    "Missed 2 planned workouts",
+                    "Good progress on deadlift goal"
+                ]
+            },
+            "n8n_response": n8n_response
+        }
+        
+    except Exception as e:
+        logger.error(f"Weekly report error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Weekly report error: {str(e)}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
