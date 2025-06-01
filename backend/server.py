@@ -283,6 +283,145 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+# Dashboard API endpoints
+@app.get("/api/user-dashboard/{user_id}")
+async def get_user_dashboard(user_id: str):
+    """Get dashboard data for a user"""
+    try:
+        # Get current time for greeting
+        current_hour = datetime.now().hour
+        if 5 <= current_hour < 12:
+            greeting = "Good morning, warrior"
+        elif 12 <= current_hour < 18:
+            greeting = "Good afternoon, champion"
+        else:
+            greeting = "Good evening, legend"
+
+        # Mock data for now (will be replaced with Supabase queries)
+        dashboard_data = DashboardData(
+            user_id=user_id,
+            current_streak=7,
+            last_workout="Strength Training",
+            last_workout_days_ago=2,
+            primary_goal="Increase deadlift to 500lbs",
+            pending_interventions=1,
+            greeting_message=greeting,
+            total_sessions=23,
+            last_session="2024-06-01T10:30:00Z"
+        )
+
+        # Send security payload to N8N webhook
+        security_payload = get_security_payload(user_id, "dashboard_view")
+        
+        # TODO: Send to N8N webhook when URLs are provided
+        logger.info(f"Dashboard accessed by user {user_id}")
+        
+        return dashboard_data
+        
+    except Exception as e:
+        logger.error(f"Dashboard error for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
+
+@app.get("/api/user-goals/{user_id}")
+async def get_user_goals(user_id: str):
+    """Get goals for a user"""
+    try:
+        # Mock goals data
+        goals = [
+            Goal(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                title="Increase deadlift to 500lbs",
+                description="Progressive overload every week",
+                progress=65.0,
+                status="active",
+                created_at=datetime.now() - timedelta(days=30),
+                updated_at=datetime.now() - timedelta(days=2),
+                target_date=datetime.now() + timedelta(days=60)
+            ),
+            Goal(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                title="Build consistent morning routine",
+                description="Wake up at 6 AM every day",
+                progress=80.0,
+                status="active",
+                created_at=datetime.now() - timedelta(days=21),
+                updated_at=datetime.now() - timedelta(days=1),
+                target_date=datetime.now() + timedelta(days=30)
+            )
+        ]
+
+        # Send security payload
+        security_payload = get_security_payload(user_id, "goals_view")
+        
+        logger.info(f"Goals retrieved for user {user_id}")
+        return {"goals": goals, "total": len(goals)}
+        
+    except Exception as e:
+        logger.error(f"Goals error for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Goals error: {str(e)}")
+
+@app.post("/api/goal-update")
+async def update_goal(goal_data: dict):
+    """Update or create a goal"""
+    try:
+        user_id = goal_data.get("user_id")
+        goal_id = goal_data.get("goal_id", str(uuid.uuid4()))
+        
+        # Mock goal update
+        updated_goal = Goal(
+            id=goal_id,
+            user_id=user_id,
+            title=goal_data.get("title", "New Goal"),
+            description=goal_data.get("description", ""),
+            progress=goal_data.get("progress", 0.0),
+            status=goal_data.get("status", "active"),
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            target_date=datetime.now() + timedelta(days=30)
+        )
+
+        # Send security payload
+        security_payload = get_security_payload(user_id, "goal_update")
+        
+        logger.info(f"Goal updated for user {user_id}: {goal_id}")
+        return {"success": True, "goal": updated_goal}
+        
+    except Exception as e:
+        logger.error(f"Goal update error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Goal update error: {str(e)}")
+
+@app.get("/api/performance-metrics/{user_id}")
+async def get_performance_metrics(user_id: str):
+    """Get performance metrics for a user"""
+    try:
+        # Mock performance data
+        metrics = PerformanceMetrics(
+            user_id=user_id,
+            active_days=28,
+            goal_progress_avg=72.5,
+            workout_consistency=85.0,
+            daily_interaction_count=3,
+            satisfaction_rate=4.2,
+            current_streak=7
+        )
+
+        # Send security payload
+        security_payload = get_security_payload(user_id, "metrics_view")
+        
+        logger.info(f"Performance metrics retrieved for user {user_id}")
+        return metrics
+        
+    except Exception as e:
+        logger.error(f"Metrics error for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Metrics error: {str(e)}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
