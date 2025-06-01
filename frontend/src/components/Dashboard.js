@@ -197,16 +197,30 @@ const Dashboard = () => {
       });
     }
 
-    // FIXED RULE 1: Voice detected AND above minimum volume (16+) - start recording
-    // Check for BOTH 'listening' and 'idle' states since state management is buggy
-    if (normalizedVolume > voiceThreshold && 
-        averageVolume > 16 && 
-        (conversationState === 'listening' || conversationState === 'idle')) {
+    // AGGRESSIVE VOICE TRIGGER - IGNORE STATE COMPLETELY
+    if (normalizedVolume > voiceThreshold && averageVolume > 16) {
       
-      console.log('🎤 VOICE TRIGGER! Volume:', Math.round(averageVolume), 'State:', conversationState);
-      console.log('🔄 FORCING: IDLE/LISTENING → RECORDING');
+      console.log('🚨 VOICE DETECTED! FORCING TRIGGER!');
+      console.log('📊 Detection Data:', {
+        averageVolume: Math.round(averageVolume),
+        normalizedVolume: Math.round(normalizedVolume * 1000) / 1000,
+        threshold: voiceThreshold,
+        currentState: conversationState,
+        isListening: isListening,
+        exceedsThreshold: normalizedVolume > voiceThreshold,
+        exceedsVolume: averageVolume > 16
+      });
+      
+      // FORCE STATE AND TRIGGER
+      console.log('🔥 FORCING STATE TO RECORDING...');
       setConversationState('recording');
+      setIsRecording(true);
+      
+      // Call recording function immediately
+      console.log('🎤 CALLING startHandsFreeRecording()...');
       startHandsFreeRecording();
+      
+      return; // Exit early to prevent other conditions
     }
     
     // RULE 2: Voice detected during TTS playback - INTERRUPT IMMEDIATELY
