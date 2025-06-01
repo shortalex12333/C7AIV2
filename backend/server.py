@@ -55,6 +55,36 @@ def get_secure_headers(user_token: str = None, session_id: str = None) -> Dict[s
         'Content-Type': 'application/json'
     }
 
+# Security validation for protected endpoints
+async def validate_security_headers(
+    request: Request,
+    x_user_token: str = Header(None, alias="X-User-Token"),
+    x_session_id: str = Header(None, alias="X-Session-ID"), 
+    x_request_id: str = Header(None, alias="X-Request-ID"),
+    x_timestamp: str = Header(None, alias="X-Timestamp")
+):
+    """Validate security headers for protected endpoints"""
+    
+    # For now, we'll be lenient with validation since we're in MVP mode
+    # In production, these should be strict
+    
+    security_info = {
+        "user_token": x_user_token,
+        "session_id": x_session_id,
+        "request_id": x_request_id,
+        "timestamp": x_timestamp,
+        "user_id": "extracted_from_jwt"  # TODO: Extract from JWT token
+    }
+    
+    # Basic timestamp validation
+    if x_timestamp and not validate_request_timing(x_timestamp):
+        logger.warning(f"Request timestamp too old: {x_timestamp}")
+        # For MVP, log warning but don't reject
+    
+    logger.info(f"Security validation - Token: {x_user_token[:20] if x_user_token else 'None'}...")
+    
+    return security_info
+
 def validate_request_timing(timestamp_str: str) -> bool:
     """Validate request timestamp is recent (within 5 minutes)"""
     try:
