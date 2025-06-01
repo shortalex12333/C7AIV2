@@ -637,111 +637,71 @@ const Dashboard = () => {
     }
   };
 
-  const EnhancedVoiceInterface = () => (
+  const SimpleVoiceInterface = () => (
     <div className="flex flex-col items-center justify-center p-8">
       <div className="relative">
-        {/* Voice Level Indicator */}
+        {/* Simple Status Indicator */}
         <div className="flex items-center justify-center space-x-1 mb-6">
           {[...Array(10)].map((_, i) => (
-            <motion.div
+            <div
               key={i}
-              className={`w-1 rounded-full transition-all duration-150 ${
-                conversationState === conversationStates.LISTENING || conversationState === conversationStates.RECORDING
-                  ? voiceLevel * 10 > i 
-                    ? 'bg-gradient-to-t from-teal-400 to-blue-600 h-8'
-                    : 'bg-gray-600 h-4'
+              className={`w-1 h-4 rounded-full ${
+                conversationState === conversationStates.RECORDING
+                  ? 'bg-red-400'
                   : conversationState === conversationStates.PROCESSING
-                  ? 'bg-yellow-400 h-6'
+                  ? 'bg-yellow-400'
                   : conversationState === conversationStates.PLAYING
-                  ? 'bg-green-400 h-6'
-                  : 'bg-gray-600 h-4'
+                  ? 'bg-green-400'
+                  : conversationState === conversationStates.LISTENING
+                  ? 'bg-teal-400'
+                  : 'bg-gray-600'
               }`}
-              animate={
-                conversationState === conversationStates.RECORDING 
-                  ? {
-                      height: [16, Math.random() * 40 + 20, 16],
-                      opacity: [0.4, 1, 0.4]
-                    }
-                  : conversationState === conversationStates.PROCESSING
-                  ? {
-                      height: [20, 32, 20],
-                      opacity: [0.6, 1, 0.6]
-                    }
-                  : {}
-              }
-              transition={{
-                duration: 0.5,
-                repeat: (conversationState === conversationStates.RECORDING || conversationState === conversationStates.PROCESSING) ? Infinity : 0,
-                delay: i * 0.1
-              }}
             />
           ))}
         </div>
 
-        {/* Main Control Button */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        {/* Simple Control Button */}
+        <button
           onClick={toggleHandsFreeMode}
           disabled={conversationState === conversationStates.PROCESSING}
-          className={`w-20 h-20 rounded-full flex items-center justify-center font-semibold transition-all duration-200 ${
+          className={`w-20 h-20 rounded-full flex items-center justify-center font-semibold transition-colors duration-200 ${
             isListening
               ? conversationState === conversationStates.RECORDING
-                ? 'bg-red-600 hover:bg-red-700 recording-pulse'
+                ? 'bg-red-600'
                 : conversationState === conversationStates.PROCESSING
-                ? 'bg-yellow-600 cursor-not-allowed'
+                ? 'bg-yellow-600'
                 : conversationState === conversationStates.PLAYING
                 ? 'bg-green-600'
-                : 'bg-gradient-to-r from-teal-400 to-blue-600 hover:from-teal-500 hover:to-blue-700'
-              : 'bg-gray-600 hover:bg-gray-500'
+                : 'bg-teal-600'
+              : 'bg-gray-600'
           }`}
         >
           {conversationState === conversationStates.PROCESSING ? (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
-            />
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : conversationState === conversationStates.RECORDING ? (
             <StopIcon className="w-8 h-8 text-white" />
           ) : conversationState === conversationStates.PLAYING ? (
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 0.5, repeat: Infinity }}
-              className="text-white text-2xl"
-            >
-              🔊
-            </motion.div>
+            <span className="text-white text-2xl">🔊</span>
           ) : isListening ? (
             <MicrophoneIcon className="w-8 h-8 text-white" />
           ) : (
             <MicrophoneIcon className="w-8 h-8 text-white opacity-50" />
           )}
-        </motion.button>
+        </button>
 
-        {/* Status Text */}
-        <motion.div
-          key={conversationState}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mt-4"
-        >
+        {/* Simple Status Text */}
+        <div className="text-center mt-4">
           <p className="text-sm font-medium text-white">
             {getStatusText()}
           </p>
           <p className="text-xs text-gray-400 mt-1">
             {isListening ? 'Hands-free mode active' : 'Tap to enable hands-free'}
           </p>
-        </motion.div>
+        </div>
 
-        {/* Voice Sensitivity Controls */}
+        {/* Simple Controls (No animations) */}
         {isListening && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-6 space-y-3"
-          >
+          <div className="mt-6 space-y-3">
             <div className="text-center">
               <label className="text-xs text-gray-400 block mb-2">Voice Sensitivity</label>
               <input
@@ -751,8 +711,9 @@ const Dashboard = () => {
                 step="0.005"
                 value={voiceThreshold}
                 onChange={(e) => setVoiceThreshold(parseFloat(e.target.value))}
-                className="w-32 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                className="w-32 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
+              <p className="text-xs text-gray-500 mt-1">{voiceThreshold.toFixed(3)}</p>
             </div>
             <div className="text-center">
               <label className="text-xs text-gray-400 block mb-2">Silence Timeout</label>
@@ -763,11 +724,11 @@ const Dashboard = () => {
                 step="250"
                 value={silenceTimeout}
                 onChange={(e) => setSilenceTimeout(parseInt(e.target.value))}
-                className="w-32 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                className="w-32 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
               <p className="text-xs text-gray-500 mt-1">{silenceTimeout}ms</p>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>
