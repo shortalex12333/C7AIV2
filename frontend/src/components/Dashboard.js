@@ -39,10 +39,11 @@ const Dashboard = () => {
   const [voiceLevel, setVoiceLevel] = useState(0);
   const [silenceTimer, setSilenceTimer] = useState(null);
   
-  // Voice detection configuration (lowered thresholds for better detection)
-  const [voiceThreshold, setVoiceThreshold] = useState(0.01); // Lowered from 0.03
-  const [silenceThreshold, setSilenceThreshold] = useState(0.005); // Lowered from 0.01
-  const [silenceTimeout, setSilenceTimeout] = useState(2500); // 2.5 seconds
+  // Voice detection configuration (adjusted based on real-world testing)
+  const [voiceThreshold, setVoiceThreshold] = useState(0.063); // 16/255 = 0.063 (volume > 16)
+  const [silenceThreshold, setSilenceThreshold] = useState(0.063); // Same as voice threshold
+  const [silenceTimeout, setSilenceTimeout] = useState(1200); // 1.2 seconds
+  const [minimumVolumeRequired, setMinimumVolumeRequired] = useState(0.063); // Must exceed 16 to start
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
