@@ -124,13 +124,22 @@ const EnhancedAuthFlow = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-      <div className="max-w-md w-full mx-auto p-6">
+    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center relative overflow-hidden">
+      {/* Subtle background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-gray-950 to-gray-900"></div>
+      
+      {/* Subtle glow effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
+
+      <div className="relative z-10 max-w-md w-full mx-auto p-6">
         
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-orange-400">Celeste7</h1>
-          <p className="text-gray-400">
+          <h1 className="text-4xl font-semibold mb-2 text-blue-400" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+            Celeste<span className="text-white">OS</span>
+          </h1>
+          <p className="text-gray-400" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
             {mode === 'signin' ? 'Welcome back' : 'Get started with your AI coach'}
           </p>
         </div>
@@ -146,7 +155,8 @@ const EnhancedAuthFlow = () => {
               onChange={handleInputChange}
               placeholder="Email address"
               required
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 backdrop-blur-sm"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
               disabled={loading}
             />
           </div>
@@ -159,13 +169,14 @@ const EnhancedAuthFlow = () => {
               onChange={handleInputChange}
               placeholder="Password"
               required
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 backdrop-blur-sm"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
               disabled={loading}
             />
           </div>
 
           {error && (
-            <div className="text-red-400 text-sm text-center">
+            <div className="text-red-400 text-sm text-center bg-red-900/20 border border-red-800/30 rounded-2xl p-3">
               {error}
             </div>
           )}
@@ -173,7 +184,8 @@ const EnhancedAuthFlow = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors duration-200"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-blue-600/25 border border-blue-500/20"
+            style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
           >
             {loading ? 'Processing...' : (mode === 'signin' ? 'Sign In' : 'Sign Up')}
           </button>
@@ -182,22 +194,22 @@ const EnhancedAuthFlow = () => {
         {/* Mode Toggle */}
         <div className="text-center mt-6">
           {mode === 'signin' ? (
-            <p className="text-gray-400">
+            <p className="text-gray-400" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
               Don't have an account?{' '}
               <button
                 onClick={() => setMode('signup')}
-                className="text-orange-400 hover:text-orange-300 font-medium"
+                className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
                 disabled={loading}
               >
                 Sign up
               </button>
             </p>
           ) : (
-            <p className="text-gray-400">
+            <p className="text-gray-400" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
               Already have an account?{' '}
               <button
                 onClick={() => setMode('signin')}
-                className="text-orange-400 hover:text-orange-300 font-medium"
+                className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
                 disabled={loading}
               >
                 Sign in
