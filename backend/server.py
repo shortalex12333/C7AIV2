@@ -710,6 +710,123 @@ async def get_weekly_report(user_id: str, security: dict = Depends(validate_secu
         logger.error(f"Weekly report error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Weekly report error: {str(e)}")
 
+# Conversation History API endpoint (NEW)
+@app.get("/api/conversation-history/{user_id}")
+async def get_conversation_history(
+    user_id: str, 
+    security: dict = Depends(validate_security_headers),
+    limit: int = 50,
+    offset: int = 0,
+    category: str = None,
+    start_date: str = None,
+    end_date: str = None,
+    search: str = None
+):
+    """Get conversation history for user with filtering and pagination"""
+    try:
+        # Mock conversation data for now (will be replaced with Supabase queries)
+        conversations = [
+            {
+                "id": "conv_001",
+                "timestamp": (datetime.now() - timedelta(hours=2)).isoformat(),
+                "user_input": "How should I approach my deadlift training?",
+                "ai_response": "Focus on progressive overload with proper form. Start with 3 sets of 5 reps at 80% of your 1RM.",
+                "category": "fitness",
+                "feedback": True,
+                "duration": 45.2
+            },
+            {
+                "id": "conv_002", 
+                "timestamp": (datetime.now() - timedelta(hours=6)).isoformat(),
+                "user_input": "I'm feeling unmotivated today",
+                "ai_response": "That's normal. Remember your goal of deadlifting 500lbs. Small actions build momentum.",
+                "category": "mindset",
+                "feedback": None,
+                "duration": 32.1
+            },
+            {
+                "id": "conv_003",
+                "timestamp": (datetime.now() - timedelta(days=1)).isoformat(),
+                "user_input": "What's my progress this week?",
+                "ai_response": "You've completed 3 workouts and maintained your morning routine. Strong consistency!",
+                "category": "progress",
+                "feedback": True,
+                "duration": 28.7
+            },
+            {
+                "id": "conv_004",
+                "timestamp": (datetime.now() - timedelta(days=2)).isoformat(),
+                "user_input": "Help me plan my nutrition",
+                "ai_response": "For your strength goals, aim for 1.6g protein per kg bodyweight. Focus on whole foods.",
+                "category": "nutrition",
+                "feedback": None,
+                "duration": 52.3
+            },
+            {
+                "id": "conv_005",
+                "timestamp": (datetime.now() - timedelta(days=5)).isoformat(),
+                "user_input": "I missed my workout yesterday",
+                "ai_response": "One missed day doesn't break your streak. Get back in there today and maintain momentum.",
+                "category": "mindset",
+                "feedback": True,
+                "duration": 19.8
+            }
+        ]
+
+        # Apply filtering
+        filtered_conversations = conversations
+        
+        if category:
+            filtered_conversations = [c for c in filtered_conversations if c["category"] == category]
+            
+        if search:
+            search_lower = search.lower()
+            filtered_conversations = [
+                c for c in filtered_conversations 
+                if search_lower in c["user_input"].lower() or search_lower in c["ai_response"].lower()
+            ]
+
+        # Apply pagination
+        total = len(filtered_conversations)
+        paginated_conversations = filtered_conversations[offset:offset + limit]
+
+        # Send to N8N webhook
+        security_payload = get_security_payload(user_id, "conversation_history")
+        security_payload.update({
+            "filters": {
+                "limit": limit,
+                "offset": offset, 
+                "category": category,
+                "search": search
+            }
+        })
+        
+        n8n_response = await call_n8n_webhook(
+            "conversation_history", 
+            security_payload, 
+            security.get("user_token"), 
+            security.get("session_id"),
+            user_id
+        )
+        
+        logger.info(f"Conversation history retrieved for user {user_id} with security: {security['request_id']}")
+        logger.info(f"N8N webhook response: {n8n_response}")
+        
+        return {
+            "conversations": paginated_conversations,
+            "pagination": {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": offset + limit < total
+            },
+            "n8n_response": n8n_response
+        }
+        
+    except Exception as e:
+        logger.error(f"Conversation history error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Conversation history error: {str(e)}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
