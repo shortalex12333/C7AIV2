@@ -185,9 +185,10 @@ const Dashboard = () => {
     // RULE 1: Voice detected AND above minimum volume (16+) - start recording
     if (normalizedVolume > voiceThreshold && 
         averageVolume > 16 && 
-        conversationState === conversationStates.LISTENING) {
+        (conversationState === conversationStates.LISTENING || conversationState === 'listening')) {
       
       console.log('🎤 Voice activity detected! Volume:', Math.round(averageVolume), 'Raw Volume > 16 ✅');
+      console.log('🔄 State transition: LISTENING → RECORDING');
       setConversationState(conversationStates.RECORDING);
       startHandsFreeRecording();
     }
@@ -195,7 +196,7 @@ const Dashboard = () => {
     // RULE 2: Voice detected during TTS playback - INTERRUPT IMMEDIATELY
     else if (normalizedVolume > voiceThreshold && 
              averageVolume > 16 && 
-             conversationState === conversationStates.PLAYING) {
+             (conversationState === conversationStates.PLAYING || conversationState === 'playing')) {
       
       console.log('⚡ INTERRUPTION detected during TTS! Volume:', Math.round(averageVolume), 'Stopping AI...');
       
@@ -218,7 +219,7 @@ const Dashboard = () => {
     }
     
     // RULE 3: Silence detected while recording (volume < 16) - start silence timer
-    else if (averageVolume < 16 && conversationState === conversationStates.RECORDING) {
+    else if (averageVolume < 16 && (conversationState === conversationStates.RECORDING || conversationState === 'recording')) {
       if (!silenceTimerRef.current) {
         console.log('🔇 Silence detected (volume < 16), starting 1200ms timeout... Volume:', Math.round(averageVolume));
         silenceTimerRef.current = setTimeout(() => {
@@ -230,7 +231,7 @@ const Dashboard = () => {
     
     // RULE 4: Voice resumed during silence timer (volume > 16) - cancel timeout  
     else if (averageVolume > 16 && 
-             conversationState === conversationStates.RECORDING && 
+             (conversationState === conversationStates.RECORDING || conversationState === 'recording') && 
              silenceTimerRef.current) {
       
       console.log('🎤 Voice resumed (volume > 16), canceling silence timeout... Volume:', Math.round(averageVolume));
