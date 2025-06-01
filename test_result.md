@@ -344,6 +344,21 @@ backend:
         agent: "testing"
         comment: "Tested POST /api/pattern-detected endpoint with sample data. The endpoint is correctly implemented and returns the expected response. The N8N webhook URL is being called correctly with appropriate security headers and payload. The webhook returns a 404 Not Found error in the test environment, which is expected as it might not be available in this environment. The backend correctly handles this error and continues to function properly."
 
+  - task: "Conversation History API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented conversation history endpoint that returns mock conversation data with pagination and filtering options."
+      - working: true
+        agent: "testing"
+        comment: "Tested GET /api/conversation-history/test-user-123 endpoint with various query parameters (limit=3, category=fitness, search=deadlift). The endpoint is correctly implemented and returns the expected mock conversation data with proper pagination. The response structure matches the expected format with a conversations array and pagination information. Security headers are properly processed, and the N8N webhook to https://ventruk.app.n8n.cloud/webhook-test/conversation-history is being called correctly with appropriate security payload. The webhook returns a 404 Not Found error in the test environment, which is expected and handled properly by the backend."
+
 frontend:
   - task: "Landing Page with Hero Section"
     implemented: true
