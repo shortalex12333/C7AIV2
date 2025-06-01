@@ -790,34 +790,41 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Simple Controls (No animations) */}
+        {/* Updated Controls (Volume-based) */}
         {isListening && (
           <div className="mt-6 space-y-3">
             <div className="text-center">
-              <label className="text-xs text-gray-400 block mb-2">Voice Sensitivity</label>
+              <label className="text-xs text-gray-400 block mb-2">Voice Sensitivity (Volume 16+ required)</label>
               <input
                 type="range"
-                min="0.01"
-                max="0.1"
+                min="0.02"
+                max="0.15"
                 step="0.005"
                 value={voiceThreshold}
                 onChange={(e) => setVoiceThreshold(parseFloat(e.target.value))}
                 className="w-32 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
-              <p className="text-xs text-gray-500 mt-1">{voiceThreshold.toFixed(3)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {voiceThreshold.toFixed(3)} (Vol: {Math.round(voiceThreshold * 255)})
+              </p>
             </div>
             <div className="text-center">
               <label className="text-xs text-gray-400 block mb-2">Silence Timeout</label>
               <input
                 type="range"
-                min="1000"
-                max="5000"
-                step="250"
+                min="800"
+                max="3000"
+                step="200"
                 value={silenceTimeout}
                 onChange={(e) => setSilenceTimeout(parseInt(e.target.value))}
                 className="w-32 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
               <p className="text-xs text-gray-500 mt-1">{silenceTimeout}ms</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-green-400">
+                📢 Speak with volume 16+ to trigger recording
+              </p>
             </div>
           </div>
         )}
