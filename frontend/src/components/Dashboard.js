@@ -129,8 +129,21 @@ const Dashboard = () => {
       
       // Start continuous voice monitoring
       startVoiceDetection();
+      
+      // Force state to listening mode
+      console.log('🔄 Setting conversation state to LISTENING...');
       setConversationState(conversationStates.LISTENING);
       setIsListening(true);
+      
+      // Double-check state after brief delay
+      setTimeout(() => {
+        console.log('🔍 State check after initialization:', {
+          conversationState: conversationState,
+          LISTENING_constant: conversationStates.LISTENING,
+          isListening: isListening,
+          stateMatches: conversationState === conversationStates.LISTENING
+        });
+      }, 100);
       
       console.log('✅ Voice detection initialized successfully');
       console.log('🎯 Voice threshold:', voiceThreshold, 'Silence threshold:', silenceThreshold);
