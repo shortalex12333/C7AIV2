@@ -7,7 +7,8 @@ const EnhancedAuthFlow = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    full_name: ''
+    firstName: '',
+    lastName: ''
   });
   const [signupEmail, setSignupEmail] = useState(''); // Store email for display name step
   const [loading, setLoading] = useState(false);
@@ -70,6 +71,7 @@ const EnhancedAuthFlow = () => {
     setError('');
 
     try {
+      // Use the correct model structure expected by the backend
       const response = await fetch(`${backendUrl}/api/auth/signup`, {
         method: 'POST',
         headers: {
@@ -78,7 +80,8 @@ const EnhancedAuthFlow = () => {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          full_name: formData.full_name || formData.email.split('@')[0] // Default name from email
+          firstName: formData.firstName || formData.email.split('@')[0], // Default name from email
+          lastName: formData.lastName || ''
         })
       });
 
@@ -174,6 +177,35 @@ const EnhancedAuthFlow = () => {
               disabled={loading}
             />
           </div>
+
+          {mode === 'signup' && (
+            <>
+              <div>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  placeholder="First Name (optional)"
+                  className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 backdrop-blur-sm"
+                  style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  placeholder="Last Name (optional)"
+                  className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 backdrop-blur-sm"
+                  style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+                  disabled={loading}
+                />
+              </div>
+            </>
+          )}
 
           {error && (
             <div className="text-red-400 text-sm text-center bg-red-900/20 border border-red-800/30 rounded-2xl p-3">
