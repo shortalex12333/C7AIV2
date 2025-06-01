@@ -8,7 +8,14 @@ import PreferencesPanel from './settings/PreferencesPanel';
 const EnhancedSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  
+  // Get user from localStorage instead of context
+  const user = {
+    userId: localStorage.getItem('celeste7_user_id'),
+    email: localStorage.getItem('celeste7_user_email'),
+    displayName: localStorage.getItem('celeste7_display_name')
+  };
+  
   const navigate = useNavigate();
 
   // Redirect if not authenticated
