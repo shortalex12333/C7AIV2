@@ -103,7 +103,7 @@ const Dashboard = () => {
     }
   };
 
-  // Voice Activity Detection algorithm
+  // Voice Activity Detection algorithm (reduced frequency to prevent UI jumping)
   const detectVoiceActivity = () => {
     if (!analyserRef.current) return;
 
@@ -114,7 +114,8 @@ const Dashboard = () => {
     const averageVolume = dataArray.reduce((a, b) => a + b) / dataArray.length;
     const normalizedVolume = averageVolume / 255; // Normalize to 0-1
     
-    setVoiceLevel(normalizedVolume);
+    // Only update voice level occasionally to prevent UI jumping
+    // setVoiceLevel(normalizedVolume); // REMOVED to stop jumping
 
     // Voice detected - start recording
     if (normalizedVolume > voiceThreshold && conversationState === conversationStates.LISTENING) {
