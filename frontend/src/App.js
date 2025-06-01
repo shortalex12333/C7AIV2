@@ -166,6 +166,14 @@ function App() {
                 path="/settings" 
                 element={
                   <ProtectedRoute>
+                    <EnhancedSettings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/old-settings" 
+                element={
+                  <ProtectedRoute>
                     <Settings />
                   </ProtectedRoute>
                 } 
