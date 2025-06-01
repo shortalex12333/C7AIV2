@@ -16,7 +16,13 @@ const EnhancedVoiceChat = () => {
   const [voiceLevel, setVoiceLevel] = useState(0);
   const [isListening, setIsListening] = useState(false);
 
-  const { user } = useAuth();
+  // Get user from localStorage instead of context
+  const user = {
+    userId: localStorage.getItem('celeste7_user_id'),
+    email: localStorage.getItem('celeste7_user_email'),
+    displayName: localStorage.getItem('celeste7_display_name')
+  };
+
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
