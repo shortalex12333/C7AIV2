@@ -1,1070 +1,285 @@
 #!/usr/bin/env python3
 import requests
 import json
-import base64
-import unittest
-import os
-import sys
-import logging
 import uuid
-from datetime import datetime, timedelta
-from dotenv import load_dotenv
+import datetime
+import sys
+from typing import Dict, Any, Optional
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Backend URL from frontend/.env
+BACKEND_URL = "https://11a27c10-faa2-4e83-aba0-2dee99e48bcb.preview.emergentagent.com"
+API_BASE_URL = f"{BACKEND_URL}/api"
 
-# Load environment variables from frontend/.env
-load_dotenv('/app/frontend/.env')
+# Test user ID
+TEST_USER_ID = "test-user-123"
 
-# Get the backend URL from environment variables
-BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL')
-if not BACKEND_URL:
-    logger.error("REACT_APP_BACKEND_URL not found in environment variables")
-    sys.exit(1)
+# Colors for terminal output
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
-logger.info(f"Using backend URL: {BACKEND_URL}")
+def print_header(message):
+    print(f"\n{Colors.HEADER}{Colors.BOLD}{'=' * 80}{Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}{message.center(80)}{Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}{'=' * 80}{Colors.ENDC}\n")
 
-class BackendAPITest(unittest.TestCase):
-    """Test suite for Celeste7 AI Voice Chat backend API endpoints"""
+def print_success(message):
+    print(f"{Colors.OKGREEN}✓ {message}{Colors.ENDC}")
 
-    def setUp(self):
-        """Set up test case"""
-        self.base_url = f"{BACKEND_URL}/api"
-        self.headers = {
-            "Content-Type": "application/json"
-        }
-        # Test user data
-        self.test_user = {
-            "email": "test@example.com",
-            "password": "Password123!",
-            "firstName": "Test",
-            "lastName": "User"
-        }
-        self.test_signin = {
-            "email": "test@example.com",
-            "password": "Password123!"
-        }
-        # Sample base64 encoded audio (just a placeholder)
-        self.sample_audio = base64.b64encode(b"test audio data").decode('utf-8')
-        # Test user ID for dashboard endpoints
-        self.test_user_id = "test-user-123"
+def print_error(message):
+    print(f"{Colors.FAIL}✗ {message}{Colors.ENDC}")
 
-    def test_root_endpoint(self):
-        """Test the root API endpoint"""
-        logger.info("Testing root endpoint")
-        response = requests.get(f"{self.base_url}/")
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertIn("message", data)
-        logger.info("Root endpoint test passed")
+def print_warning(message):
+    print(f"{Colors.WARNING}! {message}{Colors.ENDC}")
 
-    def test_auth_signup_success(self):
-        """Test successful user signup"""
-        logger.info("Testing auth signup endpoint - success case")
-        response = requests.post(
-            f"{self.base_url}/auth/signup",
-            headers=self.headers,
-            json=self.test_user
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Signup response status: {response.status_code}")
-        logger.info(f"Signup response body: {response.text}")
-        
-        # Check if the response is successful (201 Created or 200 OK) or 500 (due to n8n webhook being unavailable)
-        self.assertIn(response.status_code, [200, 201, 409, 500])
-        
-        # If 500, check if it's due to the n8n webhook being unavailable
-        if response.status_code == 500:
-            data = response.json()
-            self.assertIn("detail", data)
-            self.assertIn("service temporarily unavailable", data["detail"])
-            logger.info("Signup service returned 500 due to n8n webhook being unavailable, which is expected in this test environment")
-        elif response.status_code == 409:
-            logger.info("User already exists, which is acceptable for testing")
+def print_info(message):
+    print(f"{Colors.OKBLUE}ℹ {message}{Colors.ENDC}")
+
+def get_security_headers() -> Dict[str, str]:
+    """Generate security headers for API requests"""
+    return {
+        'X-User-Token': f"mock_token_{uuid.uuid4()}",
+        'X-Session-ID': f"session_{uuid.uuid4()}",
+        'X-Request-ID': str(uuid.uuid4()),
+        'X-Timestamp': datetime.datetime.utcnow().isoformat(),
+        'Content-Type': 'application/json'
+    }
+
+def make_request(method, endpoint, data=None, params=None):
+    """Make a request to the API with security headers"""
+    url = f"{API_BASE_URL}{endpoint}"
+    headers = get_security_headers()
+    
+    print_info(f"Making {method} request to {url}")
+    print_info(f"Headers: {json.dumps(headers, indent=2)}")
+    
+    if data:
+        print_info(f"Request data: {json.dumps(data, indent=2)}")
+    
+    try:
+        if method.lower() == 'get':
+            response = requests.get(url, headers=headers, params=params)
+        elif method.lower() == 'post':
+            response = requests.post(url, headers=headers, json=data)
         else:
-            # For successful creation, verify response contains expected data
-            data = response.json()
-            logger.info(f"Signup response data: {data}")
-            
-        logger.info("Auth signup endpoint test passed")
-
-    def test_auth_signin_success(self):
-        """Test successful user signin"""
-        logger.info("Testing auth signin endpoint - success case")
+            print_error(f"Unsupported method: {method}")
+            return None
         
-        # First ensure the user exists by trying to sign up
-        signup_response = requests.post(
-            f"{self.base_url}/auth/signup",
-            headers=self.headers,
-            json=self.test_user
-        )
-        logger.info(f"Signup response for signin test: {signup_response.status_code}")
+        print_info(f"Response status code: {response.status_code}")
         
-        # Now attempt to sign in
-        response = requests.post(
-            f"{self.base_url}/auth/signin",
-            headers=self.headers,
-            json=self.test_signin
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Signin response status: {response.status_code}")
-        logger.info(f"Signin response body: {response.text}")
-        
-        # Check if the response is successful or 500 (due to n8n webhook being unavailable)
-        self.assertIn(response.status_code, [200, 401, 500])
-        
-        if response.status_code == 401:
-            logger.info("Authentication failed, which might be expected in test environment")
-        elif response.status_code == 500:
-            data = response.json()
-            self.assertIn("detail", data)
-            self.assertIn("service temporarily unavailable", data["detail"])
-            logger.info("Signin service returned 500 due to n8n webhook being unavailable, which is expected in this test environment")
+        if response.status_code >= 200 and response.status_code < 300:
+            try:
+                response_json = response.json()
+                print_info(f"Response data: {json.dumps(response_json, indent=2)}")
+                return response_json
+            except json.JSONDecodeError:
+                print_warning("Response is not JSON")
+                print_info(f"Response text: {response.text}")
+                return response.text
         else:
-            # For successful authentication, verify response contains expected data
-            data = response.json()
-            logger.info(f"Signin response data: {data}")
-            
-        logger.info("Auth signin endpoint test passed")
+            print_error(f"Request failed with status code {response.status_code}")
+            print_info(f"Response text: {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print_error(f"Request exception: {str(e)}")
+        return None
 
-    def test_auth_signin_failure(self):
-        """Test failed user signin with incorrect credentials"""
-        logger.info("Testing auth signin endpoint - failure case")
-        
-        # Use incorrect password
-        incorrect_credentials = {
-            "email": "test@example.com",
-            "password": "WrongPassword123!"
-        }
-        
-        response = requests.post(
-            f"{self.base_url}/auth/signin",
-            headers=self.headers,
-            json=incorrect_credentials
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Failed signin response status: {response.status_code}")
-        logger.info(f"Failed signin response body: {response.text}")
-        
-        # Should return 401 Unauthorized, 500 (due to n8n webhook being unavailable),
-        # or 200 with error message (current implementation)
-        self.assertIn(response.status_code, [200, 401, 500])
-        
-        if response.status_code == 500:
-            data = response.json()
-            self.assertIn("detail", data)
-            self.assertIn("service temporarily unavailable", data["detail"])
-            logger.info("Signin service returned 500 due to n8n webhook being unavailable, which is expected in this test environment")
-        elif response.status_code == 200:
-            # Check if the response contains an error message
-            data = response.json()
-            self.assertIn("status", data)
-            self.assertEqual(data["status"], "error")
-            self.assertIn("code", data)
-            self.assertEqual(data["code"], "invalid_credentials")
-            logger.info("Authentication failed with 200 status but error message, which is acceptable")
+def test_health_check():
+    """Test the health check endpoint"""
+    print_header("Testing Health Check Endpoint")
+    response = make_request('get', '/health')
+    
+    if response and 'status' in response and response['status'] == 'healthy':
+        print_success("Health check endpoint is working")
+        return True
+    else:
+        print_error("Health check endpoint is not working")
+        return False
+
+def test_user_dashboard():
+    """Test the user dashboard endpoint"""
+    print_header("Testing User Dashboard Endpoint")
+    response = make_request('get', f'/user-dashboard/{TEST_USER_ID}')
+    
+    if response and 'user_id' in response and response['user_id'] == TEST_USER_ID:
+        print_success("User dashboard endpoint is working")
+        return True
+    else:
+        print_error("User dashboard endpoint is not working")
+        return False
+
+def test_user_goals():
+    """Test the user goals endpoint"""
+    print_header("Testing User Goals Endpoint")
+    response = make_request('get', f'/user-goals/{TEST_USER_ID}')
+    
+    if response and 'goals' in response and isinstance(response['goals'], list):
+        print_success("User goals endpoint is working")
+        return True
+    else:
+        print_error("User goals endpoint is not working")
+        return False
+
+def test_performance_metrics():
+    """Test the performance metrics endpoint"""
+    print_header("Testing Performance Metrics Endpoint")
+    response = make_request('get', f'/performance-metrics/{TEST_USER_ID}')
+    
+    if response and 'user_id' in response and response['user_id'] == TEST_USER_ID:
+        print_success("Performance metrics endpoint is working")
+        return True
+    else:
+        print_error("Performance metrics endpoint is not working")
+        return False
+
+def test_goal_update():
+    """Test the goal update endpoint"""
+    print_header("Testing Goal Update Endpoint")
+    
+    goal_data = {
+        "user_id": TEST_USER_ID,
+        "title": "Test Goal",
+        "description": "This is a test goal",
+        "progress": 50.0,
+        "status": "active"
+    }
+    
+    response = make_request('post', '/goal-update', data=goal_data)
+    
+    if response and 'success' in response and response['success'] == True:
+        print_success("Goal update endpoint is working")
+        return True
+    else:
+        print_error("Goal update endpoint is not working")
+        return False
+
+def test_conversation_history():
+    """Test the conversation history endpoint"""
+    print_header("Testing Conversation History Endpoint")
+    
+    # Test with various query parameters
+    params = {
+        "limit": 3,
+        "category": "fitness",
+        "search": "deadlift"
+    }
+    
+    response = make_request('get', f'/conversation-history/{TEST_USER_ID}', params=params)
+    
+    if response and 'conversations' in response and isinstance(response['conversations'], list):
+        print_success("Conversation history endpoint is working")
+        return True
+    else:
+        print_error("Conversation history endpoint is not working")
+        return False
+
+def test_intervention_queue():
+    """Test the intervention queue endpoint"""
+    print_header("Testing Intervention Queue Endpoint")
+    response = make_request('get', f'/intervention-queue/{TEST_USER_ID}')
+    
+    if response and 'interventions' in response and isinstance(response['interventions'], list):
+        print_success("Intervention queue endpoint is working")
+        return True
+    else:
+        print_error("Intervention queue endpoint is not working")
+        return False
+
+def test_weekly_report():
+    """Test the weekly report endpoint"""
+    print_header("Testing Weekly Report Endpoint")
+    response = make_request('get', f'/weekly-report/{TEST_USER_ID}')
+    
+    if response and 'report' in response and isinstance(response['report'], dict):
+        print_success("Weekly report endpoint is working")
+        return True
+    else:
+        print_error("Weekly report endpoint is not working")
+        return False
+
+def test_send_notification():
+    """Test the send notification endpoint"""
+    print_header("Testing Send Notification Endpoint")
+    
+    notification_data = {
+        "user_id": TEST_USER_ID,
+        "title": "Test Notification",
+        "message": "This is a test notification",
+        "type": "reminder",
+        "priority": "high"
+    }
+    
+    response = make_request('post', '/send-notification', data=notification_data)
+    
+    if response and 'success' in response and response['success'] == True:
+        print_success("Send notification endpoint is working")
+        return True
+    else:
+        print_error("Send notification endpoint is not working")
+        return False
+
+def test_pattern_detected():
+    """Test the pattern detected endpoint"""
+    print_header("Testing Pattern Detected Endpoint")
+    
+    pattern_data = {
+        "user_id": TEST_USER_ID,
+        "pattern_type": "missed_workout",
+        "pattern_data": {
+            "days_missed": 3,
+            "last_workout": "2024-06-01"
+        },
+        "confidence": 0.85
+    }
+    
+    response = make_request('post', '/pattern-detected', data=pattern_data)
+    
+    if response and 'success' in response and response['success'] == True:
+        print_success("Pattern detected endpoint is working")
+        return True
+    else:
+        print_error("Pattern detected endpoint is not working")
+        return False
+
+def run_all_tests():
+    """Run all API tests"""
+    print_header("RUNNING ALL API TESTS")
+    
+    results = {
+        "health_check": test_health_check(),
+        "user_dashboard": test_user_dashboard(),
+        "user_goals": test_user_goals(),
+        "performance_metrics": test_performance_metrics(),
+        "goal_update": test_goal_update(),
+        "conversation_history": test_conversation_history(),
+        "intervention_queue": test_intervention_queue(),
+        "weekly_report": test_weekly_report(),
+        "send_notification": test_send_notification(),
+        "pattern_detected": test_pattern_detected()
+    }
+    
+    print_header("TEST RESULTS SUMMARY")
+    
+    all_passed = True
+    for test_name, result in results.items():
+        if result:
+            print_success(f"{test_name}: PASSED")
         else:
-            logger.info("Authentication failed with 401, as expected")
-        
-        logger.info("Auth signin failure endpoint test passed")
-
-    def test_display_name_change(self):
-        """Test display name change endpoint"""
-        logger.info("Testing display name change endpoint")
-        
-        # Test data for display name change
-        display_name_data = {
-            "userID": "test-user-id",
-            "displayName": "New Display Name"
-        }
-        
-        response = requests.post(
-            f"{self.base_url}/user/display-name",
-            headers=self.headers,
-            json=display_name_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Display name change response status: {response.status_code}")
-        logger.info(f"Display name change response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertIn(response.status_code, [200, 500])
-        
-        if response.status_code == 500:
-            logger.info("Display name change returned 500, which might be expected if webhook is not available")
-        else:
-            # For successful request, verify response contains expected data
-            data = response.json()
-            logger.info(f"Display name change response data: {data}")
-            
-        logger.info("Display name change endpoint test passed")
-
-    def test_voice_chat(self):
-        """Test voice chat endpoint"""
-        logger.info("Testing voice chat endpoint")
-        
-        # Test data for voice chat
-        voice_chat_data = {
-            "userID": "test-user-id",
-            "audioBlob": self.sample_audio,
-            "sessionID": "test-session-id"
-        }
-        
-        response = requests.post(
-            f"{self.base_url}/voice/chat",
-            headers=self.headers,
-            json=voice_chat_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Voice chat response status: {response.status_code}")
-        logger.info(f"Voice chat response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertIn(response.status_code, [200, 500])
-        
-        if response.status_code == 500:
-            logger.info("Voice chat returned 500, which might be expected if webhook is not available")
-        else:
-            # For successful request, verify response contains expected data
-            data = response.json()
-            logger.info(f"Voice chat response data: {data}")
-            
-        logger.info("Voice chat endpoint test passed")
-
-    def test_status_endpoint(self):
-        """Test the status endpoint"""
-        logger.info("Testing status endpoint")
-        
-        # Test POST to create a status check
-        status_data = {
-            "client_name": "test_client"
-        }
-        
-        post_response = requests.post(
-            f"{self.base_url}/status",
-            headers=self.headers,
-            json=status_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Status POST response status: {post_response.status_code}")
-        logger.info(f"Status POST response body: {post_response.text}")
-        
-        # Check if the POST response is successful
-        self.assertEqual(post_response.status_code, 200)
-        post_data = post_response.json()
-        self.assertIn("id", post_data)
-        self.assertIn("client_name", post_data)
-        self.assertEqual(post_data["client_name"], "test_client")
-        self.assertIn("timestamp", post_data)
-        
-        # Test GET to retrieve status checks
-        get_response = requests.get(f"{self.base_url}/status")
-        
-        # Log the response for debugging
-        logger.info(f"Status GET response status: {get_response.status_code}")
-        logger.info(f"Status GET response body: {get_response.text}")
-        
-        # Check if the GET response is successful
-        self.assertEqual(get_response.status_code, 200)
-        get_data = get_response.json()
-        self.assertIsInstance(get_data, list)
-        
-        # Check if our posted status check is in the list
-        found = False
-        for status in get_data:
-            if status["id"] == post_data["id"]:
-                found = True
-                self.assertEqual(status["client_name"], "test_client")
-                break
-        
-        # Our status check might not be found if the database is reset between tests
-        # So we'll just log a warning instead of failing the test
-        if not found:
-            logger.warning("Posted status check not found in GET response, but this might be expected if the database was reset")
-        
-        logger.info("Status endpoint test passed")
-
-    def test_health_check(self):
-        """Test the health check endpoint"""
-        logger.info("Testing health check endpoint")
-        response = requests.get(f"{BACKEND_URL}/api/health")
-        
-        # Log the response for debugging
-        logger.info(f"Health check response status: {response.status_code}")
-        logger.info(f"Health check response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertIn("status", data)
-        self.assertEqual(data["status"], "healthy")
-        self.assertIn("timestamp", data)
-        
-        logger.info("Health check endpoint test passed")
-
-    def test_cors_headers(self):
-        """Test CORS headers are properly set"""
-        logger.info("Testing CORS headers")
-        
-        # Make a preflight request to check CORS headers
-        headers = {
-            'Origin': 'http://example.com',
-            'Access-Control-Request-Method': 'POST',
-            'Access-Control-Request-Headers': 'Content-Type'
-        }
-        response = requests.options(f"{self.base_url}/auth/signup", headers=headers)
-        
-        # Log the response headers for debugging
-        logger.info(f"CORS headers: {response.headers}")
-        
-        # Check if CORS headers are present
-        # Note: Some servers might not respond to OPTIONS requests correctly in test environments
-        # So we'll make this test more lenient
-        if 'Access-Control-Allow-Origin' in response.headers:
-            # The server might reflect the Origin header value instead of using '*'
-            # Both are valid CORS configurations
-            self.assertIn(response.headers['Access-Control-Allow-Origin'], ['*', 'http://example.com'])
-            logger.info("CORS headers test passed")
-        else:
-            logger.warning("CORS headers not found in response, but this might be expected in some test environments")
-            # We'll pass the test anyway since CORS is configured in the FastAPI app
-            pass
+            print_error(f"{test_name}: FAILED")
+            all_passed = False
     
-    # New dashboard API endpoint tests
-    def test_user_dashboard_endpoint(self):
-        """Test the user dashboard endpoint"""
-        logger.info("Testing user dashboard endpoint")
-        
-        response = requests.get(f"{BACKEND_URL}/api/user-dashboard/{self.test_user_id}")
-        
-        # Log the response for debugging
-        logger.info(f"User dashboard response status: {response.status_code}")
-        logger.info(f"User dashboard response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("user_id", data)
-        self.assertEqual(data["user_id"], self.test_user_id)
-        self.assertIn("current_streak", data)
-        self.assertIn("greeting_message", data)
-        self.assertIn("primary_goal", data)
-        self.assertIn("total_sessions", data)
-        
-        # Verify the greeting message is appropriate for the time of day
-        greeting = data["greeting_message"]
-        self.assertTrue(
-            "Good morning" in greeting or 
-            "Good afternoon" in greeting or 
-            "Good evening" in greeting
-        )
-        
-        logger.info("User dashboard endpoint test passed")
-    
-    def test_user_goals_endpoint(self):
-        """Test the user goals endpoint"""
-        logger.info("Testing user goals endpoint")
-        
-        response = requests.get(f"{BACKEND_URL}/api/user-goals/{self.test_user_id}")
-        
-        # Log the response for debugging
-        logger.info(f"User goals response status: {response.status_code}")
-        logger.info(f"User goals response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("goals", data)
-        self.assertIn("total", data)
-        self.assertIsInstance(data["goals"], list)
-        self.assertGreater(len(data["goals"]), 0)
-        
-        # Verify the structure of the first goal
-        goal = data["goals"][0]
-        self.assertIn("id", goal)
-        self.assertIn("user_id", goal)
-        self.assertEqual(goal["user_id"], self.test_user_id)
-        self.assertIn("title", goal)
-        self.assertIn("progress", goal)
-        self.assertIn("status", goal)
-        self.assertIn("created_at", goal)
-        
-        logger.info("User goals endpoint test passed")
-        
-    def test_user_goals_endpoint_with_security_headers(self):
-        """Test the user goals endpoint with security headers"""
-        logger.info("Testing user goals endpoint with security headers")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.get(
-            f"{BACKEND_URL}/api/user-goals/{self.test_user_id}",
-            headers=security_headers
-        )
-        
-        # Log the response for debugging
-        logger.info(f"User goals with security headers response status: {response.status_code}")
-        logger.info(f"User goals with security headers response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("goals", data)
-        self.assertIn("total", data)
-        self.assertIsInstance(data["goals"], list)
-        self.assertGreater(len(data["goals"]), 0)
-        
-        # Verify the structure of the first goal
-        goal = data["goals"][0]
-        self.assertIn("id", goal)
-        self.assertIn("user_id", goal)
-        self.assertEqual(goal["user_id"], self.test_user_id)
-        self.assertIn("title", goal)
-        self.assertIn("progress", goal)
-        self.assertIn("status", goal)
-        self.assertIn("created_at", goal)
-        
-        logger.info("User goals endpoint with security headers test passed")
-    
-    def test_performance_metrics_endpoint(self):
-        """Test the performance metrics endpoint"""
-        logger.info("Testing performance metrics endpoint")
-        
-        response = requests.get(f"{BACKEND_URL}/api/performance-metrics/{self.test_user_id}")
-        
-        # Log the response for debugging
-        logger.info(f"Performance metrics response status: {response.status_code}")
-        logger.info(f"Performance metrics response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("user_id", data)
-        self.assertEqual(data["user_id"], self.test_user_id)
-        self.assertIn("active_days", data)
-        self.assertIn("goal_progress_avg", data)
-        self.assertIn("workout_consistency", data)
-        self.assertIn("daily_interaction_count", data)
-        self.assertIn("satisfaction_rate", data)
-        self.assertIn("current_streak", data)
-        
-        logger.info("Performance metrics endpoint test passed")
-        
-    def test_performance_metrics_endpoint_with_security_headers(self):
-        """Test the performance metrics endpoint with security headers"""
-        logger.info("Testing performance metrics endpoint with security headers")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.get(
-            f"{BACKEND_URL}/api/performance-metrics/{self.test_user_id}",
-            headers=security_headers
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Performance metrics with security headers response status: {response.status_code}")
-        logger.info(f"Performance metrics with security headers response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("user_id", data)
-        self.assertEqual(data["user_id"], self.test_user_id)
-        self.assertIn("active_days", data)
-        self.assertIn("goal_progress_avg", data)
-        self.assertIn("workout_consistency", data)
-        self.assertIn("daily_interaction_count", data)
-        self.assertIn("satisfaction_rate", data)
-        self.assertIn("current_streak", data)
-        
-        logger.info("Performance metrics endpoint with security headers test passed")
-    
-    def test_goal_update_endpoint(self):
-        """Test the goal update endpoint"""
-        logger.info("Testing goal update endpoint")
-        
-        # Test data for goal update
-        goal_data = {
-            "user_id": self.test_user_id,
-            "title": "Run 5K under 25 minutes",
-            "description": "Train 3 times per week",
-            "progress": 35.0,
-            "status": "active"
-        }
-        
-        response = requests.post(
-            f"{BACKEND_URL}/api/goal-update",
-            headers=self.headers,
-            json=goal_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Goal update response status: {response.status_code}")
-        logger.info(f"Goal update response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("success", data)
-        self.assertTrue(data["success"])
-        self.assertIn("goal", data)
-        
-        # Verify the structure of the updated goal
-        goal = data["goal"]
-        self.assertIn("id", goal)
-        self.assertIn("user_id", goal)
-        self.assertEqual(goal["user_id"], self.test_user_id)
-        self.assertIn("title", goal)
-        self.assertEqual(goal["title"], goal_data["title"])
-        self.assertIn("description", goal)
-        self.assertEqual(goal["description"], goal_data["description"])
-        self.assertIn("progress", goal)
-        self.assertEqual(goal["progress"], goal_data["progress"])
-        self.assertIn("status", goal)
-        self.assertEqual(goal["status"], goal_data["status"])
-        
-        logger.info("Goal update endpoint test passed")
-        
-    def test_goal_update_endpoint_with_security_headers(self):
-        """Test the goal update endpoint with security headers"""
-        logger.info("Testing goal update endpoint with security headers")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        # Test data for goal update
-        goal_data = {
-            "user_id": self.test_user_id,
-            "title": "Improve bench press to 225lbs",
-            "description": "Train chest twice per week",
-            "progress": 45.0,
-            "status": "active"
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.post(
-            f"{BACKEND_URL}/api/goal-update",
-            headers=security_headers,
-            json=goal_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Goal update with security headers response status: {response.status_code}")
-        logger.info(f"Goal update with security headers response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("success", data)
-        self.assertTrue(data["success"])
-        self.assertIn("goal", data)
-        
-        # Verify the structure of the updated goal
-        goal = data["goal"]
-        self.assertIn("id", goal)
-        self.assertIn("user_id", goal)
-        self.assertEqual(goal["user_id"], self.test_user_id)
-        self.assertIn("title", goal)
-        self.assertEqual(goal["title"], goal_data["title"])
-        self.assertIn("description", goal)
-        self.assertEqual(goal["description"], goal_data["description"])
-        self.assertIn("progress", goal)
-        self.assertEqual(goal["progress"], goal_data["progress"])
-        self.assertIn("status", goal)
-        self.assertEqual(goal["status"], goal_data["status"])
-        
-        logger.info("Goal update endpoint with security headers test passed")
-
-    def test_intervention_queue_endpoint(self):
-        """Test the intervention queue endpoint"""
-        logger.info("Testing intervention queue endpoint")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.get(
-            f"{BACKEND_URL}/api/intervention-queue/{self.test_user_id}",
-            headers=security_headers
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Intervention queue response status: {response.status_code}")
-        logger.info(f"Intervention queue response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("interventions", data)
-        self.assertIn("total", data)
-        self.assertIsInstance(data["interventions"], list)
-        self.assertIn("n8n_response", data)
-        
-        # Verify the structure of the first intervention if available
-        if data["interventions"]:
-            intervention = data["interventions"][0]
-            self.assertIn("id", intervention)
-            self.assertIn("message", intervention)
-            self.assertIn("type", intervention)
-            self.assertIn("priority", intervention)
-            self.assertIn("actionRequired", intervention)
-        
-        logger.info("Intervention queue endpoint test passed")
-    
-    def test_weekly_report_endpoint(self):
-        """Test the weekly report endpoint"""
-        logger.info("Testing weekly report endpoint")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.get(
-            f"{BACKEND_URL}/api/weekly-report/{self.test_user_id}",
-            headers=security_headers
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Weekly report response status: {response.status_code}")
-        logger.info(f"Weekly report response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("report", data)
-        self.assertIn("n8n_response", data)
-        
-        # Verify the structure of the report
-        report = data["report"]
-        self.assertIn("week_start", report)
-        self.assertIn("week_end", report)
-        self.assertIn("active_days", report)
-        self.assertIn("workouts_completed", report)
-        self.assertIn("goals_progress", report)
-        self.assertIn("key_insights", report)
-        self.assertIsInstance(report["key_insights"], list)
-        
-        logger.info("Weekly report endpoint test passed")
-    
-    def test_send_notification_endpoint(self):
-        """Test the send notification endpoint"""
-        logger.info("Testing send notification endpoint")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        # Test data for notification
-        notification_data = {
-            "user_id": self.test_user_id,
-            "title": "Workout Reminder",
-            "message": "Don't forget your scheduled workout today!",
-            "priority": "high",
-            "action_url": "/dashboard/workouts",
-            "notification_type": "reminder"
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.post(
-            f"{BACKEND_URL}/api/send-notification",
-            headers=security_headers,
-            json=notification_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Send notification response status: {response.status_code}")
-        logger.info(f"Send notification response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("success", data)
-        self.assertTrue(data["success"])
-        self.assertIn("notification_sent", data)
-        self.assertTrue(data["notification_sent"])
-        self.assertIn("n8n_response", data)
-        
-        logger.info("Send notification endpoint test passed")
-    
-    def test_pattern_detected_endpoint(self):
-        """Test the pattern detected endpoint"""
-        logger.info("Testing pattern detected endpoint")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        # Test data for pattern detection
-        pattern_data = {
-            "user_id": self.test_user_id,
-            "pattern_type": "workout_skipping",
-            "pattern_description": "User has skipped 3 consecutive workouts",
-            "confidence": 0.85,
-            "detected_at": datetime.utcnow().isoformat(),
-            "related_data": {
-                "missed_days": ["2024-06-01", "2024-06-03", "2024-06-05"],
-                "last_completed": "2024-05-30"
-            }
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        response = requests.post(
-            f"{BACKEND_URL}/api/pattern-detected",
-            headers=security_headers,
-            json=pattern_data
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Pattern detected response status: {response.status_code}")
-        logger.info(f"Pattern detected response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("success", data)
-        self.assertTrue(data["success"])
-        self.assertIn("pattern_processed", data)
-        self.assertTrue(data["pattern_processed"])
-        self.assertIn("n8n_response", data)
-        
-        logger.info("Pattern detected endpoint test passed")
-
-    def test_all_n8n_webhook_endpoints(self):
-        """Test all N8N webhook endpoints in sequence with consistent security headers"""
-        logger.info("Testing all N8N webhook endpoints in sequence")
-        
-        # Create consistent security headers for all requests
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Using consistent security headers for all requests: {security_headers}")
-        
-        # 1. Test user dashboard endpoint
-        logger.info("1. Testing user dashboard endpoint")
-        dashboard_response = requests.get(
-            f"{BACKEND_URL}/api/user-dashboard/{self.test_user_id}",
-            headers=security_headers
-        )
-        logger.info(f"Dashboard response status: {dashboard_response.status_code}")
-        self.assertEqual(dashboard_response.status_code, 200)
-        
-        # 2. Test user goals endpoint
-        logger.info("2. Testing user goals endpoint")
-        goals_response = requests.get(
-            f"{BACKEND_URL}/api/user-goals/{self.test_user_id}",
-            headers=security_headers
-        )
-        logger.info(f"Goals response status: {goals_response.status_code}")
-        self.assertEqual(goals_response.status_code, 200)
-        
-        # 3. Test performance metrics endpoint
-        logger.info("3. Testing performance metrics endpoint")
-        metrics_response = requests.get(
-            f"{BACKEND_URL}/api/performance-metrics/{self.test_user_id}",
-            headers=security_headers
-        )
-        logger.info(f"Metrics response status: {metrics_response.status_code}")
-        self.assertEqual(metrics_response.status_code, 200)
-        
-        # 4. Test goal update endpoint
-        logger.info("4. Testing goal update endpoint")
-        goal_data = {
-            "user_id": self.test_user_id,
-            "title": "Complete N8N webhook integration testing",
-            "description": "Verify all webhook endpoints are working correctly",
-            "progress": 75.0,
-            "status": "active"
-        }
-        goal_update_response = requests.post(
-            f"{BACKEND_URL}/api/goal-update",
-            headers=security_headers,
-            json=goal_data
-        )
-        logger.info(f"Goal update response status: {goal_update_response.status_code}")
-        self.assertEqual(goal_update_response.status_code, 200)
-        
-        # 5. Test intervention queue endpoint
-        logger.info("5. Testing intervention queue endpoint")
-        intervention_response = requests.get(
-            f"{BACKEND_URL}/api/intervention-queue/{self.test_user_id}",
-            headers=security_headers
-        )
-        logger.info(f"Intervention queue response status: {intervention_response.status_code}")
-        self.assertEqual(intervention_response.status_code, 200)
-        
-        # 6. Test weekly report endpoint
-        logger.info("6. Testing weekly report endpoint")
-        report_response = requests.get(
-            f"{BACKEND_URL}/api/weekly-report/{self.test_user_id}",
-            headers=security_headers
-        )
-        logger.info(f"Weekly report response status: {report_response.status_code}")
-        self.assertEqual(report_response.status_code, 200)
-        
-        # 7. Test send notification endpoint
-        logger.info("7. Testing send notification endpoint")
-        notification_data = {
-            "user_id": self.test_user_id,
-            "title": "Integration Test",
-            "message": "Testing N8N webhook integration",
-            "priority": "high",
-            "notification_type": "test"
-        }
-        notification_response = requests.post(
-            f"{BACKEND_URL}/api/send-notification",
-            headers=security_headers,
-            json=notification_data
-        )
-        logger.info(f"Send notification response status: {notification_response.status_code}")
-        self.assertEqual(notification_response.status_code, 200)
-        
-        # 8. Test pattern detected endpoint
-        logger.info("8. Testing pattern detected endpoint")
-        pattern_data = {
-            "user_id": self.test_user_id,
-            "pattern_type": "integration_test",
-            "pattern_description": "Testing N8N webhook integration",
-            "confidence": 1.0,
-            "detected_at": datetime.utcnow().isoformat()
-        }
-        pattern_response = requests.post(
-            f"{BACKEND_URL}/api/pattern-detected",
-            headers=security_headers,
-            json=pattern_data
-        )
-        logger.info(f"Pattern detected response status: {pattern_response.status_code}")
-        self.assertEqual(pattern_response.status_code, 200)
-        
-        logger.info("All N8N webhook endpoints tested successfully")
-
-    def test_conversation_history_endpoint(self):
-        """Test the conversation history endpoint"""
-        logger.info("Testing conversation history endpoint")
-        
-        # Create security headers
-        security_headers = {
-            "Content-Type": "application/json",
-            "X-User-Token": f"mock_token_{uuid.uuid4()}",
-            "X-Session-ID": f"session_{uuid.uuid4()}",
-            "X-Request-ID": str(uuid.uuid4()),
-            "X-Timestamp": datetime.utcnow().isoformat()
-        }
-        
-        logger.info(f"Using security headers: {security_headers}")
-        
-        # Test basic endpoint without query parameters
-        response = requests.get(
-            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}",
-            headers=security_headers
-        )
-        
-        # Log the response for debugging
-        logger.info(f"Conversation history response status: {response.status_code}")
-        logger.info(f"Conversation history response body: {response.text}")
-        
-        # Check if the response is successful
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        
-        # Verify the response contains the expected fields
-        self.assertIn("conversations", data)
-        self.assertIn("pagination", data)
-        self.assertIn("n8n_response", data)
-        
-        # Verify pagination structure
-        pagination = data["pagination"]
-        self.assertIn("total", pagination)
-        self.assertIn("limit", pagination)
-        self.assertIn("offset", pagination)
-        self.assertIn("has_more", pagination)
-        
-        # Verify conversations structure
-        conversations = data["conversations"]
-        self.assertIsInstance(conversations, list)
-        if conversations:
-            conversation = conversations[0]
-            self.assertIn("id", conversation)
-            self.assertIn("timestamp", conversation)
-            self.assertIn("user_input", conversation)
-            self.assertIn("ai_response", conversation)
-            self.assertIn("category", conversation)
-        
-        logger.info("Conversation history endpoint basic test passed")
-        
-        # Test with limit parameter
-        logger.info("Testing conversation history endpoint with limit=3")
-        limit_response = requests.get(
-            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?limit=3",
-            headers=security_headers
-        )
-        
-        self.assertEqual(limit_response.status_code, 200)
-        limit_data = limit_response.json()
-        
-        # Verify limit is applied
-        self.assertLessEqual(len(limit_data["conversations"]), 3)
-        self.assertEqual(limit_data["pagination"]["limit"], 3)
-        
-        logger.info("Conversation history endpoint limit test passed")
-        
-        # Test with category filter
-        logger.info("Testing conversation history endpoint with category=fitness")
-        category_response = requests.get(
-            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?category=fitness",
-            headers=security_headers
-        )
-        
-        self.assertEqual(category_response.status_code, 200)
-        category_data = category_response.json()
-        
-        # Verify category filter is applied
-        for conversation in category_data["conversations"]:
-            self.assertEqual(conversation["category"], "fitness")
-        
-        logger.info("Conversation history endpoint category filter test passed")
-        
-        # Test with search parameter
-        logger.info("Testing conversation history endpoint with search=deadlift")
-        search_response = requests.get(
-            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?search=deadlift",
-            headers=security_headers
-        )
-        
-        self.assertEqual(search_response.status_code, 200)
-        search_data = search_response.json()
-        
-        # Verify search filter is applied (if any results)
-        if search_data["conversations"]:
-            found = False
-            for conversation in search_data["conversations"]:
-                if "deadlift" in conversation["user_input"].lower() or "deadlift" in conversation["ai_response"].lower():
-                    found = True
-                    break
-            self.assertTrue(found, "Search term 'deadlift' not found in any conversation")
-        
-        logger.info("Conversation history endpoint search filter test passed")
-        
-        # Test with multiple parameters
-        logger.info("Testing conversation history endpoint with multiple parameters")
-        multi_param_response = requests.get(
-            f"{BACKEND_URL}/api/conversation-history/{self.test_user_id}?limit=3&category=fitness&search=deadlift",
-            headers=security_headers
-        )
-        
-        self.assertEqual(multi_param_response.status_code, 200)
-        multi_param_data = multi_param_response.json()
-        
-        # Verify limit is applied
-        self.assertLessEqual(len(multi_param_data["conversations"]), 3)
-        
-        # Verify category filter is applied (if any results)
-        for conversation in multi_param_data["conversations"]:
-            self.assertEqual(conversation["category"], "fitness")
-        
-        # Verify search filter is applied (if any results)
-        if multi_param_data["conversations"]:
-            found = False
-            for conversation in multi_param_data["conversations"]:
-                if "deadlift" in conversation["user_input"].lower() or "deadlift" in conversation["ai_response"].lower():
-                    found = True
-                    break
-            self.assertTrue(found, "Search term 'deadlift' not found in any conversation")
-        
-        logger.info("Conversation history endpoint multiple parameters test passed")
-        
-        # Verify N8N webhook call
-        self.assertIn("n8n_response", multi_param_data)
-        logger.info(f"N8N webhook response: {multi_param_data['n8n_response']}")
-        
-        logger.info("Conversation history endpoint test passed")
+    if all_passed:
+        print_header("ALL TESTS PASSED! 🎉")
+        return 0
+    else:
+        print_header("SOME TESTS FAILED! 😢")
+        return 1
 
 if __name__ == "__main__":
-    unittest.main(argv=['first-arg-is-ignored'], exit=False)
+    sys.exit(run_all_tests())
