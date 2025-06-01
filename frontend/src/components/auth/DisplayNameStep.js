@@ -6,6 +6,7 @@ const DisplayNameStep = ({ email, onComplete }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,21 +20,22 @@ const DisplayNameStep = ({ email, onComplete }) => {
     setError('');
 
     try {
-      // Call N8N webhook to update profile
-      const response = await fetch('https://ventruk.app.n8n.cloud/webhook/profile-update', {
+      // Get the auth token
+      const token = localStorage.getItem('celeste7_user_token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      // Call backend API to update display name
+      const response = await fetch(`${backendUrl}/api/user/display-name`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Token': localStorage.getItem('celeste7_user_token') || 'temp_token',
-          'X-Session-ID': sessionStorage.getItem('celeste7_session_id') || 'temp_session',
-          'X-Request-ID': `req_${Date.now()}`,
-          'X-Timestamp': new Date().toISOString()
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          email,
-          display_name: displayName.trim(),
-          action: 'set_display_name',
-          timestamp: new Date().toISOString()
+          display_name: displayName.trim()
         })
       });
 
@@ -47,11 +49,17 @@ const DisplayNameStep = ({ email, onComplete }) => {
         // Navigate to voice chat
         navigate('/voice-chat');
       } else {
-        throw new Error('Failed to save display name');
+        const data = await response.json();
+        throw new Error(data.detail || 'Failed to save display name');
       }
     } catch (err) {
       console.error('Display name error:', err);
-      setError('Failed to save your name. Please try again.');
+      
+      // Store display name locally anyway to allow user to continue
+      localStorage.setItem('celeste7_display_name', displayName.trim());
+      
+      // Navigate to voice chat despite the error
+      navigate('/voice-chat');
     } finally {
       setLoading(false);
     }
