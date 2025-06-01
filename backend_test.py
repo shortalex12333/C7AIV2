@@ -564,6 +564,65 @@ class BackendAPITest(unittest.TestCase):
         self.assertEqual(goal["status"], goal_data["status"])
         
         logger.info("Goal update endpoint test passed")
+        
+    def test_goal_update_endpoint_with_security_headers(self):
+        """Test the goal update endpoint with security headers"""
+        logger.info("Testing goal update endpoint with security headers")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Test data for goal update
+        goal_data = {
+            "user_id": self.test_user_id,
+            "title": "Improve bench press to 225lbs",
+            "description": "Train chest twice per week",
+            "progress": 45.0,
+            "status": "active"
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.post(
+            f"{BACKEND_URL}/api/goal-update",
+            headers=security_headers,
+            json=goal_data
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Goal update with security headers response status: {response.status_code}")
+        logger.info(f"Goal update with security headers response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("success", data)
+        self.assertTrue(data["success"])
+        self.assertIn("goal", data)
+        
+        # Verify the structure of the updated goal
+        goal = data["goal"]
+        self.assertIn("id", goal)
+        self.assertIn("user_id", goal)
+        self.assertEqual(goal["user_id"], self.test_user_id)
+        self.assertIn("title", goal)
+        self.assertEqual(goal["title"], goal_data["title"])
+        self.assertIn("description", goal)
+        self.assertEqual(goal["description"], goal_data["description"])
+        self.assertIn("progress", goal)
+        self.assertEqual(goal["progress"], goal_data["progress"])
+        self.assertIn("status", goal)
+        self.assertEqual(goal["status"], goal_data["status"])
+        
+        logger.info("Goal update endpoint with security headers test passed")
 
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
