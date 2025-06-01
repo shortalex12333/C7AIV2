@@ -712,6 +712,7 @@ const Dashboard = () => {
         clearInterval(interruptionDetectionInterval);
         setIsPlayingResponse(null);
         setConversationState(conversationStates.LISTENING);
+        conversationStateRef.current = conversationStates.LISTENING;
         URL.revokeObjectURL(url);
         window.currentTTSAudio = null;
         console.log('TTS playback completed, returning to listening mode');
