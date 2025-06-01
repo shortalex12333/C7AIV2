@@ -164,6 +164,66 @@ backend:
       - working: true
         agent: "testing"
         comment: "Tested status endpoint for both POST and GET operations. POST successfully creates a new status entry with client_name, and GET successfully retrieves all status entries. The database connection is working properly."
+        
+  - task: "User Dashboard API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented user dashboard endpoint that returns dashboard data with greeting, streak, goals, etc."
+      - working: true
+        agent: "testing"
+        comment: "Tested GET /api/user-dashboard/test-user-123 endpoint. Returns 200 OK with the expected dashboard data including user_id, current_streak, greeting_message, primary_goal, and total_sessions. The greeting message is appropriate for the time of day. Security payload logging is working correctly."
+
+  - task: "User Goals API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented user goals endpoint that returns mock goals data."
+      - working: true
+        agent: "testing"
+        comment: "Tested GET /api/user-goals/test-user-123 endpoint. Returns 200 OK with the expected goals data including a list of goals with their details (id, user_id, title, progress, status, etc.) and the total count. Security payload logging is working correctly."
+
+  - task: "Performance Metrics API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented performance metrics endpoint that returns performance metrics data."
+      - working: true
+        agent: "testing"
+        comment: "Tested GET /api/performance-metrics/test-user-123 endpoint. Returns 200 OK with the expected performance metrics data including user_id, active_days, goal_progress_avg, workout_consistency, daily_interaction_count, satisfaction_rate, and current_streak. Security payload logging is working correctly."
+
+  - task: "Goal Update API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented goal update endpoint that accepts goal data and returns updated goal."
+      - working: true
+        agent: "testing"
+        comment: "Tested POST /api/goal-update endpoint with sample goal data. Returns 200 OK with the expected response including success status and the updated goal details. The endpoint correctly processes the input data and returns the updated goal with all required fields. Security payload logging is working correctly."
 
 frontend:
   - task: "Landing Page with Hero Section"
@@ -229,7 +289,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: false
 
 test_plan:
@@ -249,3 +309,5 @@ agent_communication:
     message: "Completed backend testing for all API endpoints. The implementation is correct, but the n8n webhooks are returning 404 Not Found errors in the test environment. This is expected as the n8n webhooks might not be available in the test environment. The backend correctly handles these errors by returning appropriate 500 responses with detailed error messages. CORS headers are properly set. All backend tasks are marked as working since the implementation is correct."
   - agent: "testing"
     message: "Additional backend testing completed. Health check endpoint is working correctly, returning 200 OK with the expected message. Status API endpoint is also working correctly for both POST and GET operations, confirming that the database connection is working properly. All backend dependencies are properly installed. The backend is running correctly on the expected port with all endpoints functional."
+  - agent: "testing"
+    message: "Completed testing of the new dashboard API endpoints. All endpoints are working correctly: GET /api/user-dashboard/test-user-123, GET /api/user-goals/test-user-123, GET /api/performance-metrics/test-user-123, and POST /api/goal-update. The endpoints return the expected mock data with appropriate structure and content. Security payload logging is working correctly. The Supabase integration is properly initialized in the server.py file."
