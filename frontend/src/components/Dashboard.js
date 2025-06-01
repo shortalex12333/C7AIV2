@@ -191,7 +191,9 @@ const Dashboard = () => {
         voiceThreshold,
         conversationState,
         aboveMinimum: averageVolume > 16,
-        rawVolume16Plus: averageVolume > 16 ? '✅ LOUD ENOUGH' : '❌ Too quiet'
+        rawVolume16Plus: averageVolume > 16 ? '✅ LOUD ENOUGH' : '❌ Too quiet',
+        meetsThreshold: normalizedVolume > voiceThreshold ? '✅ ABOVE THRESHOLD' : '❌ Below threshold',
+        readyToRecord: (normalizedVolume > voiceThreshold && averageVolume > 16) ? '🎤 READY TO RECORD!' : '⏸️ Not ready'
       });
     }
 
