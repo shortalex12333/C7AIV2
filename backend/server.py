@@ -22,18 +22,17 @@ load_dotenv(ROOT_DIR / '.env')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# N8N Webhook URLs
-N8N_BASE_URL = "https://ventruk.app.n8n.cloud/webhook"
+# N8N Webhook URLs (Exact URLs provided by user)
 N8N_WEBHOOKS = {
-    "dashboard_view": f"{N8N_BASE_URL}/dashboard-view",
-    "goals_view": f"{N8N_BASE_URL}/goals-view", 
-    "metrics_view": f"{N8N_BASE_URL}/metrics-view",
-    "goal_update": f"{N8N_BASE_URL}/goal-update",
-    "send_notification": f"{N8N_BASE_URL}/send-notification",
-    "intervention_queue": f"{N8N_BASE_URL}/intervention-queue",
-    "pattern_detected": f"{N8N_BASE_URL}/pattern-detected",
-    "weekly_report": f"{N8N_BASE_URL}/weekly-report",
-    "voice_interaction": f"{N8N_BASE_URL}/voice-interaction"  # existing one
+    "dashboard_view": "https://ventruk.n8n.cloud/webhook",
+    "goals_view": "https://ventruk.app.n8n.cloud/webhook-test/goals-view",
+    "metrics_view": "https://ventruk.app.n8n.cloud/webhook-test/metrics-view",
+    "goal_update": "https://ventruk.app.n8n.cloud/webhook-test/goals-update",
+    "send_notification": "https://ventruk.app.n8n.cloud/webhook-test/api/send-notification",
+    "intervention_queue": "https://ventruk.app.n8n.cloud/webhook-test/get-intervention-queue/api/intervention-queue",  # :userId handled dynamically
+    "pattern_detected": "https://ventruk.app.n8n.cloud/webhook-test/api/pattern-detected",
+    "weekly_report": "https://ventruk.app.n8n.cloud/webhook-test/get-weekly-report/api/weekly-report",  # :userId handled dynamically
+    "voice_interaction": "https://ventruk.app.n8n.cloud/webhook/voice-interaction"  # assuming this follows the pattern
 }
 
 # Enhanced N8N webhook caller with proper security
