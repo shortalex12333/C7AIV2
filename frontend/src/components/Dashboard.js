@@ -793,7 +793,9 @@ const Dashboard = () => {
       console.log('🔴 Disabling hands-free mode...');
       stopVoiceDetection();
       setIsListening(false);
+      isListeningRef.current = false;
       setConversationState(conversationStates.IDLE);
+      conversationStateRef.current = conversationStates.IDLE;
       
       // Stop microphone stream
       if (microphoneStreamRef.current) {
