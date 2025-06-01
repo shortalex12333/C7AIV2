@@ -814,7 +814,7 @@ const Dashboard = () => {
             {getStatusText()}
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            {isListening ? 'Hands-free mode active' : 'Tap to enable hands-free'}
+            {isListening ? 'Voice detection active - speak loudly' : 'Click to enable voice detection'}
           </p>
         </div>
 
