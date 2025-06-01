@@ -194,50 +194,62 @@ const Dashboard = () => {
     const averageVolume = dataArray.reduce((a, b) => a + b) / dataArray.length;
     const normalizedVolume = averageVolume / 255; // Normalize to 0-1
     
+    // Use refs for current state instead of stale closure values
+    const currentState = conversationStateRef.current;
+    const currentlyListening = isListeningRef.current;
+    
     // Debug logging every 3 seconds to monitor levels
     if (Date.now() % 3000 < 300) {
       console.log('🎤 Voice Detection Debug:', {
         averageVolume: Math.round(averageVolume * 10) / 10,
         normalizedVolume: Math.round(normalizedVolume * 1000) / 1000,
         voiceThreshold,
-        conversationState,
+        conversationState: currentState, // ← Now using current ref value
+        isListening: currentlyListening, // ← Now using current ref value
         aboveMinimum: averageVolume > 16,
         rawVolume16Plus: averageVolume > 16 ? '✅ LOUD ENOUGH' : '❌ Too quiet',
         meetsThreshold: normalizedVolume > voiceThreshold ? '✅ ABOVE THRESHOLD' : '❌ Below threshold',
-        readyToRecord: (normalizedVolume > voiceThreshold && averageVolume > 16) ? '🎤 READY TO RECORD!' : '⏸️ Not ready'
+        readyToRecord: (normalizedVolume > voiceThreshold && averageVolume > 16 && currentlyListening) ? '🎤 READY TO RECORD!' : '⏸️ Not ready'
       });
     }
 
-    // AGGRESSIVE VOICE TRIGGER - IGNORE STATE COMPLETELY
-    if (normalizedVolume > voiceThreshold && averageVolume > 16) {
+    // RULE 1: Voice detected and ready to record (MOST AGGRESSIVE - IGNORE STATE COMPLETELY FOR TESTING)
+    if (normalizedVolume > voiceThreshold && averageVolume > 16 && currentlyListening) {
       
-      console.log('🚨 VOICE DETECTED! FORCING TRIGGER!');
+      console.log('🚨 VOICE DETECTED! TRIGGERING RECORDING!');
       console.log('📊 Detection Data:', {
         averageVolume: Math.round(averageVolume),
         normalizedVolume: Math.round(normalizedVolume * 1000) / 1000,
         threshold: voiceThreshold,
-        currentState: conversationState,
-        isListening: isListening,
+        currentState: currentState,
+        isListening: currentlyListening,
         exceedsThreshold: normalizedVolume > voiceThreshold,
         exceedsVolume: averageVolume > 16
       });
       
-      // FORCE STATE AND TRIGGER
-      console.log('🔥 FORCING STATE TO RECORDING...');
-      setConversationState('recording');
-      setIsRecording(true);
-      
-      // Call recording function immediately
-      console.log('🎤 CALLING startHandsFreeRecording()...');
-      startHandsFreeRecording();
-      
-      return; // Exit early to prevent other conditions
+      // Only trigger if we're in listening state
+      if (currentState === conversationStates.LISTENING) {
+        console.log('✅ STATE CHECK PASSED! Starting recording...');
+        
+        // Update state properly
+        setConversationState(conversationStates.RECORDING);
+        conversationStateRef.current = conversationStates.RECORDING;
+        setIsRecording(true);
+        
+        // Call recording function
+        console.log('🎤 CALLING startHandsFreeRecording()...');
+        startHandsFreeRecording();
+        
+        return; // Exit early to prevent other conditions
+      } else {
+        console.log('❌ STATE CHECK FAILED! Current state is:', currentState, 'Expected:', conversationStates.LISTENING);
+      }
     }
     
     // RULE 2: Voice detected during TTS playback - INTERRUPT IMMEDIATELY
     else if (normalizedVolume > voiceThreshold && 
              averageVolume > 16 && 
-             conversationState === 'playing') {
+             currentState === conversationStates.PLAYING) {
       
       console.log('⚡ INTERRUPTION! Volume:', Math.round(averageVolume), 'Stopping TTS...');
       
@@ -249,18 +261,20 @@ const Dashboard = () => {
       }
       
       setIsPlayingResponse(null);
-      setConversationState('interrupted');
+      setConversationState(conversationStates.INTERRUPTED);
+      conversationStateRef.current = conversationStates.INTERRUPTED;
       
       // Start new recording immediately
       setTimeout(() => {
         console.log('🎤 New recording after interruption...');
-        setConversationState('recording');
+        setConversationState(conversationStates.RECORDING);
+        conversationStateRef.current = conversationStates.RECORDING;
         startHandsFreeRecording();
       }, 100);
     }
     
     // RULE 3: Silence detected while recording (volume < 16) - start silence timer
-    else if (averageVolume < 16 && conversationState === 'recording') {
+    else if (averageVolume < 16 && currentState === conversationStates.RECORDING) {
       if (!silenceTimerRef.current) {
         console.log('🔇 SILENCE detected, 1200ms timer started. Volume:', Math.round(averageVolume));
         silenceTimerRef.current = setTimeout(() => {
@@ -272,7 +286,7 @@ const Dashboard = () => {
     
     // RULE 4: Voice resumed during silence timer (volume > 16) - cancel timeout  
     else if (averageVolume > 16 && 
-             conversationState === 'recording' && 
+             currentState === conversationStates.RECORDING && 
              silenceTimerRef.current) {
       
       console.log('🎤 VOICE RESUMED! Canceling timeout. Volume:', Math.round(averageVolume));
