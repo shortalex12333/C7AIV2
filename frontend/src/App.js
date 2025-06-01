@@ -133,16 +133,10 @@ function App() {
         <BrowserRouter>
           <AnimatePresence mode="wait">
             <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route 
-                path="/onboarding" 
-                element={
-                  <OnboardingRoute>
-                    <OnboardingFlow />
-                  </OnboardingRoute>
-                } 
-              />
+              <Route path="/" element={<SimplifiedLanding />} />
+              <Route path="/old-landing" element={<LandingPage />} />
+              <Route path="/auth" element={<EnhancedAuthFlow />} />
+              <Route path="/old-auth" element={<AuthPage />} />
               <Route 
                 path="/dashboard" 
                 element={
@@ -155,6 +149,14 @@ function App() {
                 path="/voice-chat" 
                 element={
                   <ProtectedRoute>
+                    <EnhancedVoiceChat />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/old-voice-chat" 
+                element={
+                  <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 } 
@@ -164,6 +166,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/onboarding" 
+                element={
+                  <ProtectedRoute>
+                    <OnboardingFlow />
                   </ProtectedRoute>
                 } 
               />
