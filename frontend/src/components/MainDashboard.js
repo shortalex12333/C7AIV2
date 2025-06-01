@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { secureApiCall, initializeSession, ResponseCache } from '../utils/security';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
@@ -15,39 +16,86 @@ const MainDashboard = ({ userId = "test-user-123" }) => {
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Fetch dashboard data
+  // Initialize security session
+  useEffect(() => {
+    initializeSession();
+  }, []);
+
+  // Fetch dashboard data with security
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/user-dashboard/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
-      const data = await response.json();
+      // Check cache first
+      const cacheKey = `dashboard_${userId}`;
+      const cached = ResponseCache.get(cacheKey);
+      if (cached) {
+        setDashboardData(cached);
+        return;
+      }
+
+      const data = await secureApiCall(`${backendUrl}/api/user-dashboard/${userId}`, {
+        method: 'GET'
+      });
+      
+      if (data.success === false) {
+        throw new Error(data.error || 'Failed to fetch dashboard data');
+      }
+      
       setDashboardData(data);
+      ResponseCache.set(cacheKey, data);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       setError(err.message);
     }
   };
 
-  // Fetch goals
+  // Fetch goals with security
   const fetchGoals = async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/user-goals/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch goals');
-      const data = await response.json();
+      // Check cache first
+      const cacheKey = `goals_${userId}`;
+      const cached = ResponseCache.get(cacheKey);
+      if (cached) {
+        setGoals(cached.goals || []);
+        return;
+      }
+
+      const data = await secureApiCall(`${backendUrl}/api/user-goals/${userId}`, {
+        method: 'GET'
+      });
+      
+      if (data.success === false) {
+        throw new Error(data.error || 'Failed to fetch goals');
+      }
+      
       setGoals(data.goals || []);
+      ResponseCache.set(cacheKey, data);
     } catch (err) {
       console.error('Goals fetch error:', err);
       setError(err.message);
     }
   };
 
-  // Fetch performance metrics
+  // Fetch performance metrics with security
   const fetchMetrics = async () => {
-    try {
-      const response = await fetch(`${backendUrl}/api/performance-metrics/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch metrics');
-      const data = await response.json();
+    try:
+      // Check cache first
+      const cacheKey = `metrics_${userId}`;
+      const cached = ResponseCache.get(cacheKey);
+      if (cached) {
+        setMetrics(cached);
+        return;
+      }
+
+      const data = await secureApiCall(`${backendUrl}/api/performance-metrics/${userId}`, {
+        method: 'GET'
+      });
+      
+      if (data.success === false) {
+        throw new Error(data.error || 'Failed to fetch metrics');
+      }
+      
       setMetrics(data);
+      ResponseCache.set(cacheKey, data);
     } catch (err) {
       console.error('Metrics fetch error:', err);
       setError(err.message);
