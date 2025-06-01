@@ -624,5 +624,306 @@ class BackendAPITest(unittest.TestCase):
         
         logger.info("Goal update endpoint with security headers test passed")
 
+    def test_intervention_queue_endpoint(self):
+        """Test the intervention queue endpoint"""
+        logger.info("Testing intervention queue endpoint")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.get(
+            f"{BACKEND_URL}/api/intervention-queue/{self.test_user_id}",
+            headers=security_headers
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Intervention queue response status: {response.status_code}")
+        logger.info(f"Intervention queue response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("interventions", data)
+        self.assertIn("total", data)
+        self.assertIsInstance(data["interventions"], list)
+        self.assertIn("n8n_response", data)
+        
+        # Verify the structure of the first intervention if available
+        if data["interventions"]:
+            intervention = data["interventions"][0]
+            self.assertIn("id", intervention)
+            self.assertIn("message", intervention)
+            self.assertIn("type", intervention)
+            self.assertIn("priority", intervention)
+            self.assertIn("actionRequired", intervention)
+        
+        logger.info("Intervention queue endpoint test passed")
+    
+    def test_weekly_report_endpoint(self):
+        """Test the weekly report endpoint"""
+        logger.info("Testing weekly report endpoint")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.get(
+            f"{BACKEND_URL}/api/weekly-report/{self.test_user_id}",
+            headers=security_headers
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Weekly report response status: {response.status_code}")
+        logger.info(f"Weekly report response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("report", data)
+        self.assertIn("n8n_response", data)
+        
+        # Verify the structure of the report
+        report = data["report"]
+        self.assertIn("week_start", report)
+        self.assertIn("week_end", report)
+        self.assertIn("active_days", report)
+        self.assertIn("workouts_completed", report)
+        self.assertIn("goals_progress", report)
+        self.assertIn("key_insights", report)
+        self.assertIsInstance(report["key_insights"], list)
+        
+        logger.info("Weekly report endpoint test passed")
+    
+    def test_send_notification_endpoint(self):
+        """Test the send notification endpoint"""
+        logger.info("Testing send notification endpoint")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Test data for notification
+        notification_data = {
+            "user_id": self.test_user_id,
+            "title": "Workout Reminder",
+            "message": "Don't forget your scheduled workout today!",
+            "priority": "high",
+            "action_url": "/dashboard/workouts",
+            "notification_type": "reminder"
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.post(
+            f"{BACKEND_URL}/api/send-notification",
+            headers=security_headers,
+            json=notification_data
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Send notification response status: {response.status_code}")
+        logger.info(f"Send notification response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("success", data)
+        self.assertTrue(data["success"])
+        self.assertIn("notification_sent", data)
+        self.assertTrue(data["notification_sent"])
+        self.assertIn("n8n_response", data)
+        
+        logger.info("Send notification endpoint test passed")
+    
+    def test_pattern_detected_endpoint(self):
+        """Test the pattern detected endpoint"""
+        logger.info("Testing pattern detected endpoint")
+        
+        # Create security headers
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Test data for pattern detection
+        pattern_data = {
+            "user_id": self.test_user_id,
+            "pattern_type": "workout_skipping",
+            "pattern_description": "User has skipped 3 consecutive workouts",
+            "confidence": 0.85,
+            "detected_at": datetime.utcnow().isoformat(),
+            "related_data": {
+                "missed_days": ["2024-06-01", "2024-06-03", "2024-06-05"],
+                "last_completed": "2024-05-30"
+            }
+        }
+        
+        logger.info(f"Using security headers: {security_headers}")
+        
+        response = requests.post(
+            f"{BACKEND_URL}/api/pattern-detected",
+            headers=security_headers,
+            json=pattern_data
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Pattern detected response status: {response.status_code}")
+        logger.info(f"Pattern detected response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("success", data)
+        self.assertTrue(data["success"])
+        self.assertIn("pattern_processed", data)
+        self.assertTrue(data["pattern_processed"])
+        self.assertIn("n8n_response", data)
+        
+        logger.info("Pattern detected endpoint test passed")
+
+    def test_all_n8n_webhook_endpoints(self):
+        """Test all N8N webhook endpoints in sequence with consistent security headers"""
+        logger.info("Testing all N8N webhook endpoints in sequence")
+        
+        # Create consistent security headers for all requests
+        security_headers = {
+            "Content-Type": "application/json",
+            "X-User-Token": f"mock_token_{uuid.uuid4()}",
+            "X-Session-ID": f"session_{uuid.uuid4()}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Timestamp": datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Using consistent security headers for all requests: {security_headers}")
+        
+        # 1. Test user dashboard endpoint
+        logger.info("1. Testing user dashboard endpoint")
+        dashboard_response = requests.get(
+            f"{BACKEND_URL}/api/user-dashboard/{self.test_user_id}",
+            headers=security_headers
+        )
+        logger.info(f"Dashboard response status: {dashboard_response.status_code}")
+        self.assertEqual(dashboard_response.status_code, 200)
+        
+        # 2. Test user goals endpoint
+        logger.info("2. Testing user goals endpoint")
+        goals_response = requests.get(
+            f"{BACKEND_URL}/api/user-goals/{self.test_user_id}",
+            headers=security_headers
+        )
+        logger.info(f"Goals response status: {goals_response.status_code}")
+        self.assertEqual(goals_response.status_code, 200)
+        
+        # 3. Test performance metrics endpoint
+        logger.info("3. Testing performance metrics endpoint")
+        metrics_response = requests.get(
+            f"{BACKEND_URL}/api/performance-metrics/{self.test_user_id}",
+            headers=security_headers
+        )
+        logger.info(f"Metrics response status: {metrics_response.status_code}")
+        self.assertEqual(metrics_response.status_code, 200)
+        
+        # 4. Test goal update endpoint
+        logger.info("4. Testing goal update endpoint")
+        goal_data = {
+            "user_id": self.test_user_id,
+            "title": "Complete N8N webhook integration testing",
+            "description": "Verify all webhook endpoints are working correctly",
+            "progress": 75.0,
+            "status": "active"
+        }
+        goal_update_response = requests.post(
+            f"{BACKEND_URL}/api/goal-update",
+            headers=security_headers,
+            json=goal_data
+        )
+        logger.info(f"Goal update response status: {goal_update_response.status_code}")
+        self.assertEqual(goal_update_response.status_code, 200)
+        
+        # 5. Test intervention queue endpoint
+        logger.info("5. Testing intervention queue endpoint")
+        intervention_response = requests.get(
+            f"{BACKEND_URL}/api/intervention-queue/{self.test_user_id}",
+            headers=security_headers
+        )
+        logger.info(f"Intervention queue response status: {intervention_response.status_code}")
+        self.assertEqual(intervention_response.status_code, 200)
+        
+        # 6. Test weekly report endpoint
+        logger.info("6. Testing weekly report endpoint")
+        report_response = requests.get(
+            f"{BACKEND_URL}/api/weekly-report/{self.test_user_id}",
+            headers=security_headers
+        )
+        logger.info(f"Weekly report response status: {report_response.status_code}")
+        self.assertEqual(report_response.status_code, 200)
+        
+        # 7. Test send notification endpoint
+        logger.info("7. Testing send notification endpoint")
+        notification_data = {
+            "user_id": self.test_user_id,
+            "title": "Integration Test",
+            "message": "Testing N8N webhook integration",
+            "priority": "high",
+            "notification_type": "test"
+        }
+        notification_response = requests.post(
+            f"{BACKEND_URL}/api/send-notification",
+            headers=security_headers,
+            json=notification_data
+        )
+        logger.info(f"Send notification response status: {notification_response.status_code}")
+        self.assertEqual(notification_response.status_code, 200)
+        
+        # 8. Test pattern detected endpoint
+        logger.info("8. Testing pattern detected endpoint")
+        pattern_data = {
+            "user_id": self.test_user_id,
+            "pattern_type": "integration_test",
+            "pattern_description": "Testing N8N webhook integration",
+            "confidence": 1.0,
+            "detected_at": datetime.utcnow().isoformat()
+        }
+        pattern_response = requests.post(
+            f"{BACKEND_URL}/api/pattern-detected",
+            headers=security_headers,
+            json=pattern_data
+        )
+        logger.info(f"Pattern detected response status: {pattern_response.status_code}")
+        self.assertEqual(pattern_response.status_code, 200)
+        
+        logger.info("All N8N webhook endpoints tested successfully")
+
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
