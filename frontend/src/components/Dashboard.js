@@ -143,11 +143,11 @@ const Dashboard = () => {
     }
   };
 
-  // Start continuous voice monitoring
+  // Start continuous voice monitoring (reduced frequency)
   const startVoiceDetection = () => {
     if (voiceDetectionIntervalRef.current) return;
     
-    voiceDetectionIntervalRef.current = setInterval(detectVoiceActivity, 100); // Check every 100ms
+    voiceDetectionIntervalRef.current = setInterval(detectVoiceActivity, 300); // Reduced to 300ms to prevent UI jumping
     console.log('Voice detection monitoring started');
   };
 
