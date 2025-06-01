@@ -11,6 +11,7 @@ import MainDashboard from './components/MainDashboard';
 import EnhancedVoiceChat from './components/EnhancedVoiceChat';
 import OnboardingFlow from './components/OnboardingFlow';
 import Settings from './components/Settings';
+import EnhancedSettings from './components/EnhancedSettings';
 
 // Auth Context
 const AuthContext = createContext();
