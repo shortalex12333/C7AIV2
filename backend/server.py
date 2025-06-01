@@ -76,6 +76,17 @@ async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_toke
         logger.error(f"❌ N8N webhook {webhook_name} error: {str(e)}")
         return {"success": False, "error": str(e)}
 
+# Supabase setup
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+
+if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+    logger.error("Missing Supabase credentials")
+    supabase: Optional[Client] = None
+else:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    logger.info("Supabase client initialized")
+
 # Security helper function with proper Celeste7 specification
 def get_security_payload(user_id: str, action: str) -> Dict[str, Any]:
     """Generate security payload for N8N webhooks according to Celeste7 spec"""
