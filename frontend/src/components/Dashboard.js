@@ -627,6 +627,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error uploading WAV audio to n8n → Wit.ai:', error);
       setConversationState(conversationStates.LISTENING);
+      conversationStateRef.current = conversationStates.LISTENING;
       
       if (error.response?.status === 400) {
         alert('Audio format not supported by Wit.ai. Please try recording again.');
