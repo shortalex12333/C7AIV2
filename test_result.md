@@ -234,7 +234,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication Webhooks Integration"
     - "Landing Page with Hero Section"
     - "Authentication UI"
     - "Voice Chat Dashboard"
