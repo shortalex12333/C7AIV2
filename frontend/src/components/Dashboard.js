@@ -614,12 +614,14 @@ const Dashboard = () => {
         // Auto-play TTS audio if available
         if (ttsAudio && mimeType) {
           setConversationState(conversationStates.PLAYING);
+          conversationStateRef.current = conversationStates.PLAYING;
           setTimeout(() => {
             playTTSAudio(ttsAudio, mimeType, aiMessageId);
           }, 300);
         } else {
           // No audio, return to listening
           setConversationState(conversationStates.LISTENING);
+          conversationStateRef.current = conversationStates.LISTENING;
         }
       }
     } catch (error) {
