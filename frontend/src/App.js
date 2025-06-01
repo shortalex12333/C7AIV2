@@ -144,6 +144,14 @@ function App() {
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
+                    <MainDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/voice-chat" 
+                element={
+                  <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 } 
