@@ -32,7 +32,8 @@ N8N_WEBHOOKS = {
     "intervention_queue": "https://ventruk.app.n8n.cloud/webhook-test/get-intervention-queue/api/intervention-queue",  # :userId handled dynamically
     "pattern_detected": "https://ventruk.app.n8n.cloud/webhook-test/api/pattern-detected",
     "weekly_report": "https://ventruk.app.n8n.cloud/webhook-test/get-weekly-report/api/weekly-report",  # :userId handled dynamically
-    "voice_interaction": "https://ventruk.app.n8n.cloud/webhook/voice-interaction"  # assuming this follows the pattern
+    "voice_interaction": "https://ventruk.app.n8n.cloud/webhook/voice-interaction",  # assuming this follows the pattern
+    "conversation_history": "https://ventruk.app.n8n.cloud/webhook-test/conversation-history"  # NEW
 }
 
 # Enhanced N8N webhook caller with proper security
