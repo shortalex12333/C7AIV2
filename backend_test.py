@@ -236,6 +236,23 @@ class BackendAPITest(unittest.TestCase):
             
         logger.info("Voice chat endpoint test passed")
 
+    def test_health_check(self):
+        """Test the health check endpoint"""
+        logger.info("Testing health check endpoint")
+        response = requests.get(f"{self.base_url}/")
+        
+        # Log the response for debugging
+        logger.info(f"Health check response status: {response.status_code}")
+        logger.info(f"Health check response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("message", data)
+        self.assertEqual(data["message"], "Celeste7 AI Voice Chat API")
+        
+        logger.info("Health check endpoint test passed")
+
     def test_cors_headers(self):
         """Test CORS headers are properly set"""
         logger.info("Testing CORS headers")
