@@ -440,10 +440,13 @@ const Dashboard = () => {
   };
 
   const stopHandsFreeRecording = () => {
-    if (mediaRecorderRef.current && conversationState === conversationStates.RECORDING) {
+    const currentState = conversationStateRef.current;
+    if (mediaRecorderRef.current && currentState === conversationStates.RECORDING) {
+      console.log('⏹️ Stopping hands-free recording...');
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setConversationState(conversationStates.PROCESSING);
+      conversationStateRef.current = conversationStates.PROCESSING;
       
       // Clear any pending silence timer
       if (silenceTimerRef.current) {
