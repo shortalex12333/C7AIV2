@@ -340,62 +340,77 @@ const Dashboard = () => {
     return view.buffer;
   };
 
-  // Hands-free recording functions
+  // Hands-free recording functions with aggressive logging
   const startHandsFreeRecording = async () => {
+    console.log('🎬 startHandsFreeRecording() CALLED!');
+    
     try {
       // Use the same stream for recording that we're using for detection
       const stream = microphoneStreamRef.current;
       if (!stream) {
+        console.error('❌ No microphone stream available!');
         throw new Error('No microphone stream available');
       }
+
+      console.log('✅ Microphone stream available');
 
       // Check WAV support and initialize MediaRecorder
       const wavMime = 'audio/wav';
       const preferredMime = MediaRecorder.isTypeSupported(wavMime) ? wavMime : 'audio/webm;codecs=opus';
       
-      console.log(`Hands-free recording with MIME type: ${preferredMime}`);
+      console.log(`🎵 Starting recording with MIME type: ${preferredMime}`);
       setRecordingFormat(preferredMime === wavMime ? 'wav' : 'webm');
       
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: preferredMime });
       audioChunksRef.current = [];
       
+      console.log('📹 MediaRecorder created');
+      
       mediaRecorderRef.current.ondataavailable = (event) => {
+        console.log('📦 Audio chunk received, size:', event.data.size);
         audioChunksRef.current.push(event.data);
       };
       
       mediaRecorderRef.current.onstop = async (event) => {
+        console.log('⏹️ MediaRecorder stopped, processing audio...');
+        
         const recordedBlob = new Blob(audioChunksRef.current, { 
           type: mediaRecorderRef.current.mimeType 
         });
+        
+        console.log('📄 Recorded blob created, size:', recordedBlob.size);
         
         let wavBlob;
         
         if (recordedBlob.type === 'audio/wav') {
           wavBlob = recordedBlob;
-          console.log('Using native WAV recording');
+          console.log('✅ Using native WAV recording');
         } else {
-          console.log('Converting WebM to WAV for Wit.ai compatibility...');
+          console.log('🔄 Converting WebM to WAV...');
           try {
             wavBlob = await convertWebMToWav(recordedBlob);
-            console.log('WebM to WAV conversion completed successfully');
+            console.log('✅ WebM to WAV conversion completed');
           } catch (conversionError) {
-            console.error('WAV conversion failed:', conversionError);
+            console.error('❌ WAV conversion failed:', conversionError);
             alert('Audio conversion failed. Please try again.');
-            setConversationState(conversationStates.LISTENING);
+            setConversationState('idle');
             return;
           }
         }
         
         // Process the audio
+        console.log('🚀 Sending to webhook...');
         await uploadToN8n(wavBlob);
       };
       
+      console.log('▶️ Starting MediaRecorder...');
       mediaRecorderRef.current.start();
       setIsRecording(true);
+      console.log('🔴 Recording started successfully!');
       
     } catch (error) {
-      console.error('Failed to start hands-free recording:', error);
-      setConversationState(conversationStates.LISTENING);
+      console.error('❌ Failed to start hands-free recording:', error);
+      setConversationState('idle');
     }
   };
 
