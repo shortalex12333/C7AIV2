@@ -48,6 +48,8 @@ class BackendAPITest(unittest.TestCase):
         }
         # Sample base64 encoded audio (just a placeholder)
         self.sample_audio = base64.b64encode(b"test audio data").decode('utf-8')
+        # Test user ID for dashboard endpoints
+        self.test_user_id = "test-user-123"
 
     def test_root_endpoint(self):
         """Test the root API endpoint"""
@@ -293,7 +295,7 @@ class BackendAPITest(unittest.TestCase):
     def test_health_check(self):
         """Test the health check endpoint"""
         logger.info("Testing health check endpoint")
-        response = requests.get(f"{self.base_url}/")
+        response = requests.get(f"{BACKEND_URL}/api/health")
         
         # Log the response for debugging
         logger.info(f"Health check response status: {response.status_code}")
@@ -302,8 +304,9 @@ class BackendAPITest(unittest.TestCase):
         # Check if the response is successful
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertIn("message", data)
-        self.assertEqual(data["message"], "Celeste7 AI Voice Chat API")
+        self.assertIn("status", data)
+        self.assertEqual(data["status"], "healthy")
+        self.assertIn("timestamp", data)
         
         logger.info("Health check endpoint test passed")
 
@@ -334,6 +337,145 @@ class BackendAPITest(unittest.TestCase):
             logger.warning("CORS headers not found in response, but this might be expected in some test environments")
             # We'll pass the test anyway since CORS is configured in the FastAPI app
             pass
+    
+    # New dashboard API endpoint tests
+    def test_user_dashboard_endpoint(self):
+        """Test the user dashboard endpoint"""
+        logger.info("Testing user dashboard endpoint")
+        
+        response = requests.get(f"{BACKEND_URL}/api/user-dashboard/{self.test_user_id}")
+        
+        # Log the response for debugging
+        logger.info(f"User dashboard response status: {response.status_code}")
+        logger.info(f"User dashboard response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("user_id", data)
+        self.assertEqual(data["user_id"], self.test_user_id)
+        self.assertIn("current_streak", data)
+        self.assertIn("greeting_message", data)
+        self.assertIn("primary_goal", data)
+        self.assertIn("total_sessions", data)
+        
+        # Verify the greeting message is appropriate for the time of day
+        greeting = data["greeting_message"]
+        self.assertTrue(
+            "Good morning" in greeting or 
+            "Good afternoon" in greeting or 
+            "Good evening" in greeting
+        )
+        
+        logger.info("User dashboard endpoint test passed")
+    
+    def test_user_goals_endpoint(self):
+        """Test the user goals endpoint"""
+        logger.info("Testing user goals endpoint")
+        
+        response = requests.get(f"{BACKEND_URL}/api/user-goals/{self.test_user_id}")
+        
+        # Log the response for debugging
+        logger.info(f"User goals response status: {response.status_code}")
+        logger.info(f"User goals response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("goals", data)
+        self.assertIn("total", data)
+        self.assertIsInstance(data["goals"], list)
+        self.assertGreater(len(data["goals"]), 0)
+        
+        # Verify the structure of the first goal
+        goal = data["goals"][0]
+        self.assertIn("id", goal)
+        self.assertIn("user_id", goal)
+        self.assertEqual(goal["user_id"], self.test_user_id)
+        self.assertIn("title", goal)
+        self.assertIn("progress", goal)
+        self.assertIn("status", goal)
+        self.assertIn("created_at", goal)
+        
+        logger.info("User goals endpoint test passed")
+    
+    def test_performance_metrics_endpoint(self):
+        """Test the performance metrics endpoint"""
+        logger.info("Testing performance metrics endpoint")
+        
+        response = requests.get(f"{BACKEND_URL}/api/performance-metrics/{self.test_user_id}")
+        
+        # Log the response for debugging
+        logger.info(f"Performance metrics response status: {response.status_code}")
+        logger.info(f"Performance metrics response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("user_id", data)
+        self.assertEqual(data["user_id"], self.test_user_id)
+        self.assertIn("active_days", data)
+        self.assertIn("goal_progress_avg", data)
+        self.assertIn("workout_consistency", data)
+        self.assertIn("daily_interaction_count", data)
+        self.assertIn("satisfaction_rate", data)
+        self.assertIn("current_streak", data)
+        
+        logger.info("Performance metrics endpoint test passed")
+    
+    def test_goal_update_endpoint(self):
+        """Test the goal update endpoint"""
+        logger.info("Testing goal update endpoint")
+        
+        # Test data for goal update
+        goal_data = {
+            "user_id": self.test_user_id,
+            "title": "Run 5K under 25 minutes",
+            "description": "Train 3 times per week",
+            "progress": 35.0,
+            "status": "active"
+        }
+        
+        response = requests.post(
+            f"{BACKEND_URL}/api/goal-update",
+            headers=self.headers,
+            json=goal_data
+        )
+        
+        # Log the response for debugging
+        logger.info(f"Goal update response status: {response.status_code}")
+        logger.info(f"Goal update response body: {response.text}")
+        
+        # Check if the response is successful
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Verify the response contains the expected fields
+        self.assertIn("success", data)
+        self.assertTrue(data["success"])
+        self.assertIn("goal", data)
+        
+        # Verify the structure of the updated goal
+        goal = data["goal"]
+        self.assertIn("id", goal)
+        self.assertIn("user_id", goal)
+        self.assertEqual(goal["user_id"], self.test_user_id)
+        self.assertIn("title", goal)
+        self.assertEqual(goal["title"], goal_data["title"])
+        self.assertIn("description", goal)
+        self.assertEqual(goal["description"], goal_data["description"])
+        self.assertIn("progress", goal)
+        self.assertEqual(goal["progress"], goal_data["progress"])
+        self.assertIn("status", goal)
+        self.assertEqual(goal["status"], goal_data["status"])
+        
+        logger.info("Goal update endpoint test passed")
 
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
