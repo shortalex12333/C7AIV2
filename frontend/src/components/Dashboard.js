@@ -39,9 +39,9 @@ const Dashboard = () => {
   const [voiceLevel, setVoiceLevel] = useState(0);
   const [silenceTimer, setSilenceTimer] = useState(null);
   
-  // Voice detection configuration
-  const [voiceThreshold, setVoiceThreshold] = useState(0.03); // Configurable sensitivity
-  const [silenceThreshold, setSilenceThreshold] = useState(0.01);
+  // Voice detection configuration (lowered thresholds for better detection)
+  const [voiceThreshold, setVoiceThreshold] = useState(0.01); // Lowered from 0.03
+  const [silenceThreshold, setSilenceThreshold] = useState(0.005); // Lowered from 0.01
   const [silenceTimeout, setSilenceTimeout] = useState(2500); // 2.5 seconds
   
   const mediaRecorderRef = useRef(null);
