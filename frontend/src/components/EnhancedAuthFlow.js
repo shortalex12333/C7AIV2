@@ -31,7 +31,7 @@ const EnhancedAuthFlow = () => {
     setError('');
 
     try {
-      const response = await fetch(`${backendUrl}/api/auth/signin`, {
+      const response = await fetch(`${backendUrl}/auth/sign-in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
