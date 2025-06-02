@@ -242,6 +242,33 @@ async def create_status_check(status_check: StatusCheckCreate):
     
     return [StatusCheck(**status_check) for status_check in status_checks]
 
+# OPTIONS handlers for auth endpoints to handle CORS preflight
+@api_router.options("/auth/signup")
+async def auth_signup_options():
+    return JSONResponse(
+        status_code=204,
+        headers={
+            "Access-Control-Allow-Origin": "https://63a0c2a2-fd8a-4676-9c94-c642e7b65503.preview.emergentagent.com",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "300"
+        }
+    )
+
+@api_router.options("/auth/signin")
+async def auth_signin_options():
+    return JSONResponse(
+        status_code=204,
+        headers={
+            "Access-Control-Allow-Origin": "https://63a0c2a2-fd8a-4676-9c94-c642e7b65503.preview.emergentagent.com",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "300"
+        }
+    )
+
 @api_router.post("/auth/signup")
 async def signup(user_data: UserSignUp):
     try:
