@@ -377,14 +377,22 @@ async def signin(user_data: UserSignIn):
         except Exception as e:
             logger.warning(f"N8N signin webhook failed: {str(e)}")
         
-        # Return the user data and token
-        return {
-            "user_id": user_id,
-            "email": user_data.email,
-            "display_name": user.get("display_name", ""),
-            "access_token": access_token,
-            "token_type": "bearer"
-        }
+        # Return the user data and token with CORS headers
+        return JSONResponse(
+            content={
+                "user_id": user_id,
+                "email": user_data.email,
+                "display_name": user.get("display_name", ""),
+                "access_token": access_token,
+                "token_type": "bearer"
+            },
+            headers={
+                "Access-Control-Allow-Origin": "https://11a27c10-faa2-4e83-aba0-2dee99e48bcb.preview.emergentagent.com",
+                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Access-Control-Allow-Credentials": "true"
+            }
+        )
     except HTTPException as he:
         # Re-raise HTTP exceptions
         raise he
