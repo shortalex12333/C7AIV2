@@ -1,67 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { secureApiCall } from '../../utils/security';
 
-const ProfileSettings = ({ userId }) => {
+const ProfileSettings = () => {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const [profile, setProfile] = useState({
-    displayName: localStorage.getItem('celeste7_display_name') || '',
-    email: localStorage.getItem('celeste7_user_email') || '',
+    displayName: '',
+    email: '',
+    firstName: '',
+    lastName: ''
+  });
+  const [passwords, setPasswords] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleInputChange = (e) => {
-    setProfile({
-      ...profile,
-      [e.target.name]: e.target.value
-    });
-    // Clear messages on input change
-    setMessage({ type: '', text: '' });
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await secureApiCall(`${backendUrl}/api/profile`);
+      
+      if (response && !response.error) {
+        setProfile({
+          displayName: response.display_name || '',
+          email: response.email || '',
+          firstName: response.first_name || '',
+          lastName: response.last_name || ''
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    }
   };
 
-  const handleDisplayNameUpdate = async (e) => {
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    
-    if (!profile.displayName.trim()) {
-      setMessage({ type: 'error', text: 'Display name cannot be empty' });
-      return;
-    }
-
     setLoading(true);
+    setMessage('');
+
     try {
-      // Call N8N webhook to update profile
-      const response = await fetch('https://ventruk.app.n8n.cloud/webhook/profile-update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Token': localStorage.getItem('celeste7_user_token') || 'temp_token',
-          'X-Session-ID': sessionStorage.getItem('celeste7_session_id') || 'temp_session',
-          'X-Request-ID': `req_${Date.now()}`,
-          'X-Timestamp': new Date().toISOString()
-        },
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await secureApiCall(`${backendUrl}/api/profile`, {
+        method: 'PUT',
         body: JSON.stringify({
-          user_id: userId,
-          email: profile.email,
-          display_name: profile.displayName.trim(),
-          action: 'update_display_name',
-          timestamp: new Date().toISOString()
+          display_name: profile.displayName,
+          first_name: profile.firstName,
+          last_name: profile.lastName
         })
       });
 
-      if (response.ok) {
-        // Update local storage
-        localStorage.setItem('celeste7_display_name', profile.displayName.trim());
-        setMessage({ type: 'success', text: 'Display name updated successfully!' });
+      if (response && !response.error) {
+        setMessage('Profile updated successfully!');
+        setTimeout(() => setMessage(''), 3000);
       } else {
-        throw new Error('Failed to update display name');
+        setMessage('Failed to update profile');
       }
-    } catch (err) {
-      console.error('Display name update error:', err);
-      setMessage({ type: 'error', text: 'Failed to update display name. Please try again.' });
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setMessage('Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -69,49 +71,45 @@ const ProfileSettings = ({ userId }) => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
-    if (!profile.currentPassword || !profile.newPassword || !profile.confirmPassword) {
-      setMessage({ type: 'error', text: 'Please fill in all password fields' });
-      return;
-    }
-
-    if (profile.newPassword !== profile.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match' });
-      return;
-    }
-
-    if (profile.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'New password must be at least 6 characters' });
-      return;
-    }
-
     setLoading(true);
+    setMessage('');
+
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      setMessage('New passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (passwords.newPassword.length < 6) {
+      setMessage('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Call backend API to change password
-      const response = await secureApiCall(`${process.env.REACT_APP_BACKEND_URL}/api/auth/change-password`, {
-        method: 'POST',
-        body: {
-          user_id: userId,
-          current_password: profile.currentPassword,
-          new_password: profile.newPassword
-        }
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await secureApiCall(`${backendUrl}/api/change-password`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          current_password: passwords.currentPassword,
+          new_password: passwords.newPassword
+        })
       });
 
-      if (response.success !== false) {
-        setMessage({ type: 'success', text: 'Password changed successfully!' });
-        setProfile({
-          ...profile,
+      if (response && !response.error) {
+        setMessage('Password changed successfully!');
+        setPasswords({
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
         });
-        setShowPasswordChange(false);
+        setTimeout(() => setMessage(''), 3000);
       } else {
-        throw new Error(response.error || 'Failed to change password');
+        setMessage(response.error || 'Failed to change password');
       }
-    } catch (err) {
-      console.error('Password change error:', err);
-      setMessage({ type: 'error', text: err.message || 'Failed to change password. Please try again.' });
+    } catch (error) {
+      console.error('Password change error:', error);
+      setMessage('Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -119,29 +117,26 @@ const ProfileSettings = ({ userId }) => {
 
   const handleDeleteAccount = async () => {
     setLoading(true);
+    setMessage('');
+
     try {
-      // Call backend API to delete account
-      const response = await secureApiCall(`${process.env.REACT_APP_BACKEND_URL}/api/auth/delete-account`, {
-        method: 'DELETE',
-        body: {
-          user_id: userId,
-          email: profile.email
-        }
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await secureApiCall(`${backendUrl}/api/delete-account`, {
+        method: 'DELETE'
       });
 
-      if (response.success !== false) {
+      if (response && !response.error) {
         // Clear all local data
         localStorage.clear();
         sessionStorage.clear();
-        
-        // Redirect to home
+        // Redirect to landing page
         window.location.href = '/';
       } else {
-        throw new Error(response.error || 'Failed to delete account');
+        setMessage('Failed to delete account');
       }
-    } catch (err) {
-      console.error('Account deletion error:', err);
-      setMessage({ type: 'error', text: err.message || 'Failed to delete account. Please try again.' });
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      setMessage('Failed to delete account');
     } finally {
       setLoading(false);
       setShowDeleteConfirm(false);
@@ -149,179 +144,205 @@ const ProfileSettings = ({ userId }) => {
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-2xl">
-        <h2 className="text-xl font-bold mb-6">Profile Settings</h2>
+    <div className="space-y-8">
+      
+      {/* Status Message */}
+      {message && (
+        <div className={`p-4 rounded-xl border ${
+          message.includes('successfully') 
+            ? 'bg-green-900/20 border-green-700 text-green-300' 
+            : 'bg-red-900/20 border-red-700 text-red-300'
+        }`}>
+          <p className="text-sm font-medium" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+            {message}
+          </p>
+        </div>
+      )}
 
-        {/* Message Display */}
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-          }`}>
-            {message.text}
+      {/* Profile Information */}
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          Profile Information
+        </h3>
+        
+        <form onSubmit={handleProfileUpdate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Display Name
+            </label>
+            <input
+              type="text"
+              value={profile.displayName}
+              onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+              placeholder="Enter your display name"
+            />
           </div>
-        )}
 
-        {/* Display Name Section */}
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Display Name</h3>
-          <form onSubmit={handleDisplayNameUpdate} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Name
+              <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+                First Name
               </label>
               <input
                 type="text"
-                name="displayName"
-                value={profile.displayName}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                placeholder="Enter your display name"
-                disabled={loading}
-                maxLength={50}
+                value={profile.firstName}
+                onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+                placeholder="First name"
               />
             </div>
-            
-            <button
-              type="submit"
-              disabled={loading || !profile.displayName.trim()}
-              className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-            >
-              {loading ? 'Updating...' : 'Update Name'}
-            </button>
-          </form>
-        </div>
 
-        {/* Email Section (Read-only) */}
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Email Address</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={profile.lastName}
+                onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+                placeholder="Last name"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Email
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Email Address
             </label>
             <input
               type="email"
               value={profile.email}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 cursor-not-allowed"
               disabled
-              readOnly
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-gray-400 cursor-not-allowed"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Email address cannot be changed
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              {loading ? 'Updating...' : 'Update Profile'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Change Password */}
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          Change Password
+        </h3>
+        
+        <form onSubmit={handlePasswordChange} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Current Password
+            </label>
+            <input
+              type="password"
+              value={passwords.currentPassword}
+              onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+              placeholder="Enter current password"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              New Password
+            </label>
+            <input
+              type="password"
+              value={passwords.newPassword}
+              onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+              placeholder="Enter new password"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              value={passwords.confirmPassword}
+              onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+              placeholder="Confirm new password"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              {loading ? 'Changing...' : 'Change Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Delete Account */}
+      <div className="bg-red-900/20 border border-red-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-red-300 mb-4" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          Delete Account
+        </h3>
+        <p className="text-gray-300 text-sm mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          This action cannot be undone. All your data, conversations, and progress will be permanently deleted.
+        </p>
+        
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors"
+            style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+          >
+            Delete Account
+          </button>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-red-300 font-medium" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Are you absolutely sure you want to delete your account?
             </p>
-          </div>
-        </div>
-
-        {/* Password Section */}
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Password</h3>
-            <button
-              onClick={() => setShowPasswordChange(!showPasswordChange)}
-              className="text-orange-400 hover:text-orange-300 text-sm font-medium"
-            >
-              {showPasswordChange ? 'Cancel' : 'Change Password'}
-            </button>
-          </div>
-
-          {showPasswordChange && (
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={profile.currentPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                  placeholder="Enter current password"
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={profile.newPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                  placeholder="Enter new password"
-                  disabled={loading}
-                  minLength={6}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={profile.confirmPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                  placeholder="Confirm new password"
-                  disabled={loading}
-                  minLength={6}
-                />
-              </div>
-
+            <div className="flex space-x-4">
               <button
-                type="submit"
+                onClick={handleDeleteAccount}
                 disabled={loading}
-                className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+                style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
               >
-                {loading ? 'Changing...' : 'Change Password'}
+                {loading ? 'Deleting...' : 'Yes, Delete My Account'}
               </button>
-            </form>
-          )}
-        </div>
-
-        {/* Delete Account Section */}
-        <div className="bg-red-900 bg-opacity-20 border border-red-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-red-400 mb-2">Danger Zone</h3>
-          <p className="text-gray-300 text-sm mb-4">
-            Once you delete your account, there is no going back. Please be certain.
-          </p>
-          
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-            >
-              Delete Account
-            </button>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-red-300 text-sm font-medium">
-                Are you absolutely sure? This action cannot be undone.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={loading}
-                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  {loading ? 'Deleting...' : 'Yes, Delete Account'}
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={loading}
-                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+                style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+              >
+                Cancel
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
