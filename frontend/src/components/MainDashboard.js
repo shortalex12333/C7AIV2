@@ -59,7 +59,7 @@ const MainDashboard = ({ userId = "test-user-123" }) => {
         return;
       }
 
-      const data = await secureApiCall(`${backendUrl}/api/user-goals/${userId}`, {
+      const data = await secureApiCall(`${backendUrl}/api/goals`, {
         method: 'GET'
       });
       
