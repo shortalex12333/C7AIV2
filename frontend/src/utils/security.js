@@ -112,11 +112,6 @@ export const initializeSession = () => {
     sessionStorage.setItem('celeste7_session_id', `session_${generateUUID()}_${Date.now()}`);
   }
   
-  if (!localStorage.getItem('celeste7_user_token')) {
-    // In production, this should come from authentication
-    localStorage.setItem('celeste7_user_token', `demo_token_${generateUUID()}`);
-  }
-  
   console.log('🔐 Celeste7 security session initialized');
 };
 
