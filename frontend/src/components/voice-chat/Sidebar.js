@@ -29,7 +29,7 @@ const Sidebar = ({ isOpen, onToggle, userId }) => {
 
     setLoading(true);
     try {
-      const response = await secureApiCall(`${backendUrl}/api/conversation-history/${userId}`, {
+      const response = await secureApiCall(`${backendUrl}/api/conversation-history`, {
         method: 'GET'
       });
 
