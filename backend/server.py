@@ -167,7 +167,6 @@ class DisplayNameUpdate(BaseModel):
     display_name: str
 
 class VoiceInteraction(BaseModel):
-    user_id: str
     message: str
     session_id: Optional[str] = None
 
