@@ -38,7 +38,9 @@ const AuthPage = () => {
     setError('');
 
     try {
-      const endpoint = isSignUp ? '/auth/sign-up' : '/auth/sign-in';
+      const signUpUrl = 'https://ventruk.app.n8n.cloud/webhook/auth/sign-up';
+      const signInUrl = 'https://ventruk.app.n8n.cloud/webhook/auth/sign-in';
+      const url = isSignUp ? signUpUrl : signInUrl;
       const payload = isSignUp 
         ? formData 
         : { email: formData.email, password: formData.password };
