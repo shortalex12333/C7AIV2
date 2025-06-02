@@ -885,60 +885,107 @@ async def get_dashboard_data(current_user: dict = Depends(get_current_user)):
         )
 
 @api_router.get("/conversation-history")
-async def get_conversation_history(
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    current_user: dict = Depends(get_current_user)
-):
+async def get_conversation_history(current_user: dict = Depends(get_current_user)):
     try:
         user_id = current_user["sub"]
         
-        # Get conversation history from database
-        conversations = list(
-            db.voice_interactions.find({"user_id": user_id})
-            .sort("timestamp", -1)
-            .skip(offset)
-            .limit(limit)
-        )
-        conversations = json.loads(dumps(conversations))
-        
-        # Try to call N8N webhook for additional conversation data
-        try:
-            n8n_response = await call_n8n_webhook(
-                "conversation_history",
-                {
-                    "user_id": user_id,
-                    "limit": limit,
-                    "offset": offset
-                },
-                user_token=current_user.get("access_token")
-            )
-            logger.info(f"N8N webhook response: {n8n_response}")
-            
-            # If N8N provides additional data, merge it
-            if n8n_response and "conversations" in n8n_response:
-                # This is a simplified merge - in production you'd want a more sophisticated approach
-                n8n_conversations = n8n_response["conversations"]
-                # For now, just append any N8N conversations not in our DB
-                if n8n_conversations:
-                    conversations.extend([c for c in n8n_conversations if c["_id"] not in [existing["_id"] for existing in conversations]])
-        except Exception as e:
-            logger.warning(f"N8N conversation history webhook failed: {str(e)}")
+        # Mock conversation data for now
+        conversations = [
+            {
+                "id": "conv_001",
+                "timestamp": (datetime.now() - timedelta(hours=2)).isoformat(),
+                "user_input": "How should I approach my deadlift training?",
+                "ai_response": "Focus on progressive overload with proper form. Start with 3 sets of 5 reps at 80% of your 1RM.",
+                "category": "fitness",
+                "feedback": True,
+                "duration": 45.2
+            },
+            {
+                "id": "conv_002", 
+                "timestamp": (datetime.now() - timedelta(hours=6)).isoformat(),
+                "user_input": "I'm feeling unmotivated today",
+                "ai_response": "That's normal. Remember your goal of deadlifting 500lbs. Small actions build momentum.",
+                "category": "mindset",
+                "feedback": None,
+                "duration": 32.1
+            }
+        ]
         
         return {
-            "success": True,
             "conversations": conversations,
-            "total": db.voice_interactions.count_documents({"user_id": user_id}),
-            "limit": limit,
-            "offset": offset
+            "total": len(conversations)
         }
-    except HTTPException as he:
-        raise he
+        
     except Exception as e:
         logger.error(f"Get conversation history error: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail="An error occurred while retrieving conversation history"
+        )
+
+@api_router.get("/user-goals")
+async def get_user_goals(current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = current_user["sub"]
+        
+        # Mock goals data for now
+        goals = [
+            {
+                "id": "goal_001",
+                "user_id": user_id,
+                "title": "Increase deadlift to 500lbs",
+                "description": "Progressive overload every week",
+                "progress": 65.0,
+                "status": "active",
+                "created_at": (datetime.now() - timedelta(days=30)).isoformat(),
+                "updated_at": (datetime.now() - timedelta(days=2)).isoformat(),
+                "target_date": (datetime.now() + timedelta(days=60)).isoformat()
+            },
+            {
+                "id": "goal_002",
+                "user_id": user_id,
+                "title": "Build consistent morning routine",
+                "description": "Wake up at 6 AM every day",
+                "progress": 80.0,
+                "status": "active",
+                "created_at": (datetime.now() - timedelta(days=21)).isoformat(),
+                "updated_at": (datetime.now() - timedelta(days=1)).isoformat(),
+                "target_date": (datetime.now() + timedelta(days=30)).isoformat()
+            }
+        ]
+        
+        return {"goals": goals, "total": len(goals)}
+        
+    except Exception as e:
+        logger.error(f"Get user goals error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while retrieving goals"
+        )
+
+@api_router.get("/performance-metrics")
+async def get_performance_metrics(current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = current_user["sub"]
+        
+        # Mock performance data
+        metrics = {
+            "user_id": user_id,
+            "active_days": 28,
+            "goal_progress_avg": 72.5,
+            "workout_consistency": 85.0,
+            "daily_interaction_count": 3,
+            "satisfaction_rate": 4.2,
+            "current_streak": 7
+        }
+        
+        return metrics
+        
+    except Exception as e:
+        logger.error(f"Get performance metrics error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while retrieving performance metrics"
         )
 
 # Mount the API router
