@@ -32,7 +32,7 @@ const MainDashboard = ({ userId = "test-user-123" }) => {
         return;
       }
 
-      const data = await secureApiCall(`${backendUrl}/api/user-dashboard/${userId}`, {
+      const data = await secureApiCall(`${backendUrl}/api/dashboard`, {
         method: 'GET'
       });
       
