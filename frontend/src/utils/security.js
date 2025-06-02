@@ -10,18 +10,24 @@ const generateUUID = () => {
   });
 };
 
-// Get secure headers for webhook requests
+// Get secure headers for API requests (updated for JWT Bearer token)
 export const getSecureHeaders = () => {
-  const userToken = localStorage.getItem('celeste7_user_token') || `mock_token_${generateUUID()}`;
+  const userToken = localStorage.getItem('celeste7_access_token') || localStorage.getItem('celeste7_user_token');
   const sessionId = sessionStorage.getItem('celeste7_session_id') || `session_${generateUUID()}`;
   
-  return {
-    'X-User-Token': userToken,
+  const headers = {
     'X-Session-ID': sessionId,
     'X-Request-ID': generateUUID(),
     'X-Timestamp': new Date().toISOString(),
     'Content-Type': 'application/json'
   };
+
+  // Add Authorization header if token exists
+  if (userToken) {
+    headers['Authorization'] = `Bearer ${userToken}`;
+  }
+  
+  return headers;
 };
 
 // Validate request data before sending
