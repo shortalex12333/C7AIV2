@@ -1,367 +1,482 @@
 import React, { useState, useEffect } from 'react';
+import { secureApiCall } from '../../utils/security';
 
-const PreferencesPanel = ({ userId }) => {
+const PreferencesPanel = () => {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const [preferences, setPreferences] = useState({
-    voiceSensitivity: 50,
-    interventionFrequency: 'balanced', // aggressive, balanced, minimal
-    notificationPreferences: {
-      workoutReminders: true,
-      goalDeadlines: true,
-      streakNotifications: true,
-      weeklyReports: true
+    voice_settings: {
+      speech_rate: 1.0,
+      voice_model: 'default',
+      enable_voice_feedback: true,
+      auto_transcription: true
     },
-    theme: 'dark', // dark, light
-    preferredInterventionTimes: {
-      morning: true,
-      afternoon: false,
-      evening: true
+    notifications: {
+      email_notifications: true,
+      push_notifications: true,
+      session_reminders: true,
+      progress_updates: true,
+      reminder_frequency: 'daily'
     },
-    categoryFocus: {
-      fitness: true,
-      business: true,
-      goals: true,
-      mindset: true
+    ai_coaching: {
+      coaching_style: 'balanced',
+      feedback_detail: 'medium',
+      enable_real_time_feedback: true,
+      focus_areas: [],
+      difficulty_level: 'intermediate'
     },
-    privacySettings: {
-      dataSharing: false,
-      analytics: true
+    privacy: {
+      save_recordings: true,
+      share_analytics: false,
+      data_retention_days: 30
     }
   });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Load preferences from localStorage on mount
+  const focusAreaOptions = [
+    'confidence',
+    'clarity',
+    'pace',
+    'volume',
+    'pronunciation',
+    'body_language',
+    'presentation_skills',
+    'conversation_skills'
+  ];
+
   useEffect(() => {
-    const savedPreferences = localStorage.getItem('celeste7_preferences');
-    if (savedPreferences) {
-      try {
-        const parsed = JSON.parse(savedPreferences);
-        setPreferences({ ...preferences, ...parsed });
-      } catch (err) {
-        console.error('Failed to parse saved preferences:', err);
-      }
-    }
+    loadPreferences();
   }, []);
 
-  const savePreferences = async (newPreferences) => {
-    setLoading(true);
+  const loadPreferences = async () => {
     try {
-      // Save to localStorage
-      localStorage.setItem('celeste7_preferences', JSON.stringify(newPreferences));
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await secureApiCall(`${backendUrl}/api/preferences`);
       
-      // TODO: Send to backend/N8N webhook for server-side storage
-      // await secureApiCall(`${backendUrl}/api/user-preferences`, {
-      //   method: 'POST',
-      //   body: { user_id: userId, preferences: newPreferences }
-      // });
-      
-      setMessage({ type: 'success', text: 'Preferences saved successfully!' });
-      
-      // Clear message after 3 seconds
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 3000);
-    } catch (err) {
-      console.error('Failed to save preferences:', err);
-      setMessage({ type: 'error', text: 'Failed to save preferences. Please try again.' });
+      if (response && !response.error) {
+        setPreferences({
+          ...preferences,
+          ...response
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load preferences:', error);
+    }
+  };
+
+  const savePreferences = async () => {
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await secureApiCall(`${backendUrl}/api/preferences`, {
+        method: 'PUT',
+        body: JSON.stringify(preferences)
+      });
+
+      if (response && !response.error) {
+        setMessage('Preferences saved successfully!');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+      setMessage('Failed to save preferences');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSliderChange = (key, value) => {
-    const newPreferences = { ...preferences, [key]: value };
-    setPreferences(newPreferences);
-    savePreferences(newPreferences);
-  };
-
-  const handleSelectChange = (key, value) => {
-    const newPreferences = { ...preferences, [key]: value };
-    setPreferences(newPreferences);
-    savePreferences(newPreferences);
-  };
-
-  const handleToggleChange = (category, key) => {
-    const newPreferences = {
-      ...preferences,
-      [category]: {
-        ...preferences[category],
-        [key]: !preferences[category][key]
+  const updatePreference = (section, key, value) => {
+    setPreferences(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [key]: value
       }
-    };
-    setPreferences(newPreferences);
-    savePreferences(newPreferences);
+    }));
   };
 
-  const resetToDefaults = () => {
-    const defaultPreferences = {
-      voiceSensitivity: 50,
-      interventionFrequency: 'balanced',
-      notificationPreferences: {
-        workoutReminders: true,
-        goalDeadlines: true,
-        streakNotifications: true,
-        weeklyReports: true
-      },
-      theme: 'dark',
-      preferredInterventionTimes: {
-        morning: true,
-        afternoon: false,
-        evening: true
-      },
-      categoryFocus: {
-        fitness: true,
-        business: true,
-        goals: true,
-        mindset: true
-      },
-      privacySettings: {
-        dataSharing: false,
-        analytics: true
-      }
-    };
+  const toggleFocusArea = (area) => {
+    const currentAreas = preferences.ai_coaching.focus_areas || [];
+    const updatedAreas = currentAreas.includes(area)
+      ? currentAreas.filter(a => a !== area)
+      : [...currentAreas, area];
     
-    setPreferences(defaultPreferences);
-    savePreferences(defaultPreferences);
+    updatePreference('ai_coaching', 'focus_areas', updatedAreas);
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Preferences</h2>
-          <button
-            onClick={resetToDefaults}
-            disabled={loading}
-            className="text-gray-400 hover:text-white text-sm transition-colors"
-          >
-            Reset to Defaults
-          </button>
+    <div className="space-y-8">
+      
+      {/* Status Message */}
+      {message && (
+        <div className={`p-4 rounded-xl border ${
+          message.includes('successfully') 
+            ? 'bg-green-900/20 border-green-700 text-green-300' 
+            : 'bg-red-900/20 border-red-700 text-red-300'
+        }`}>
+          <p className="text-sm font-medium" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+            {message}
+          </p>
         </div>
+      )}
 
-        {/* Message Display */}
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-          }`}>
-            {message.text}
-          </div>
-        )}
-
-        <div className="space-y-8">
-          
-          {/* Voice Settings */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Voice Settings</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Voice Sensitivity
-                </label>
-                <div className="flex items-center space-x-4">
-                  <span className="text-xs text-gray-500">Low</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={preferences.voiceSensitivity}
-                    onChange={(e) => handleSliderChange('voiceSensitivity', parseInt(e.target.value))}
-                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #ea580c 0%, #ea580c ${preferences.voiceSensitivity}%, #374151 ${preferences.voiceSensitivity}%, #374151 100%)`
-                    }}
-                  />
-                  <span className="text-xs text-gray-500">High</span>
-                  <span className="text-sm text-white font-medium w-12 text-right">
-                    {preferences.voiceSensitivity}%
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Adjust how sensitive the voice detection is to ambient noise
-                </p>
-              </div>
+      {/* Voice Settings */}
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          Voice Settings
+        </h3>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Speech Rate
+            </label>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-400">Slow</span>
+              <input
+                type="range"
+                min="0.5"
+                max="2.0"
+                step="0.1"
+                value={preferences.voice_settings.speech_rate}
+                onChange={(e) => updatePreference('voice_settings', 'speech_rate', parseFloat(e.target.value))}
+                className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              />
+              <span className="text-sm text-gray-400">Fast</span>
+              <span className="text-sm text-blue-400 min-w-[3rem]">
+                {preferences.voice_settings.speech_rate}x
+              </span>
             </div>
           </div>
 
-          {/* AI Coaching Settings */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">AI Coaching</h3>
-            
-            <div className="space-y-4">
-              
-              {/* Intervention Frequency */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Intervention Frequency
-                </label>
-                <select
-                  value={preferences.interventionFrequency}
-                  onChange={(e) => handleSelectChange('interventionFrequency', e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                >
-                  <option value="aggressive">Aggressive - Daily check-ins and frequent nudges</option>
-                  <option value="balanced">Balanced - Regular guidance with space to breathe</option>
-                  <option value="minimal">Minimal - Only when you ask or major milestones</option>
-                </select>
-              </div>
-
-              {/* Category Focus */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Category Focus
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.entries(preferences.categoryFocus).map(([category, enabled]) => (
-                    <label key={category} className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={() => handleToggleChange('categoryFocus', category)}
-                        className="w-4 h-4 text-orange-600 bg-gray-800 border-gray-600 rounded focus:ring-orange-500 focus:ring-2"
-                      />
-                      <span className="text-sm text-gray-300 capitalize">{category}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Preferred Intervention Times */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Preferred Intervention Times
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {Object.entries(preferences.preferredInterventionTimes).map(([time, enabled]) => (
-                    <label key={time} className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={() => handleToggleChange('preferredInterventionTimes', time)}
-                        className="w-4 h-4 text-orange-600 bg-gray-800 border-gray-600 rounded focus:ring-orange-500 focus:ring-2"
-                      />
-                      <span className="text-sm text-gray-300 capitalize">{time}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notification Settings */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Notifications</h3>
-            
-            <div className="space-y-4">
-              {Object.entries(preferences.notificationPreferences).map(([key, enabled]) => (
-                <label key={key} className="flex items-center justify-between cursor-pointer">
-                  <div>
-                    <span className="text-sm font-medium text-gray-300">
-                      {key === 'workoutReminders' ? 'Workout Reminders' :
-                       key === 'goalDeadlines' ? 'Goal Deadlines' :
-                       key === 'streakNotifications' ? 'Streak Notifications' :
-                       key === 'weeklyReports' ? 'Weekly Reports' : key}
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      {key === 'workoutReminders' ? 'Get notified when it\'s time to workout' :
-                       key === 'goalDeadlines' ? 'Alerts for upcoming goal deadlines' :
-                       key === 'streakNotifications' ? 'Celebrate milestones and maintain streaks' :
-                       key === 'weeklyReports' ? 'Weekly summary of your progress' : ''}
-                    </p>
-                  </div>
-                  
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={() => handleToggleChange('notificationPreferences', key)}
-                      className="sr-only"
-                    />
-                    <div className={`w-10 h-6 rounded-full transition-colors ${enabled ? 'bg-orange-600' : 'bg-gray-600'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform m-1 ${enabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Appearance Settings */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Appearance</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Theme
-                </label>
-                <select
-                  value={preferences.theme}
-                  onChange={(e) => handleSelectChange('theme', e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                >
-                  <option value="dark">Dark Theme (Recommended)</option>
-                  <option value="light">Light Theme</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Dark theme is optimized for focus and reduced eye strain
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Privacy Settings */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Privacy & Data</h3>
-            
-            <div className="space-y-4">
-              {Object.entries(preferences.privacySettings).map(([key, enabled]) => (
-                <label key={key} className="flex items-center justify-between cursor-pointer">
-                  <div>
-                    <span className="text-sm font-medium text-gray-300">
-                      {key === 'dataSharing' ? 'Data Sharing' : 'Analytics'}
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      {key === 'dataSharing' 
-                        ? 'Share anonymized data to improve AI coaching (disabled by default)' 
-                        : 'Allow usage analytics to improve your experience'
-                      }
-                    </p>
-                  </div>
-                  
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={() => handleToggleChange('privacySettings', key)}
-                      className="sr-only"
-                    />
-                    <div className={`w-10 h-6 rounded-full transition-colors ${enabled ? 'bg-orange-600' : 'bg-gray-600'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform m-1 ${enabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Export Data Section */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Data Export</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              Download your data including conversations, goals, and metrics
-            </p>
-            <button
-              onClick={() => {
-                // TODO: Implement data export
-                setMessage({ type: 'success', text: 'Data export feature coming soon!' });
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Voice Model
+            </label>
+            <select
+              value={preferences.voice_settings.voice_model}
+              onChange={(e) => updatePreference('voice_settings', 'voice_model', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
             >
-              Export My Data
+              <option value="default">Default</option>
+              <option value="professional">Professional</option>
+              <option value="friendly">Friendly</option>
+              <option value="encouraging">Encouraging</option>
+            </select>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+                Enable Voice Feedback
+              </label>
+              <button
+                type="button"
+                onClick={() => updatePreference('voice_settings', 'enable_voice_feedback', !preferences.voice_settings.enable_voice_feedback)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  preferences.voice_settings.enable_voice_feedback ? 'bg-blue-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                  preferences.voice_settings.enable_voice_feedback ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+                Auto Transcription
+              </label>
+              <button
+                type="button"
+                onClick={() => updatePreference('voice_settings', 'auto_transcription', !preferences.voice_settings.auto_transcription)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  preferences.voice_settings.auto_transcription ? 'bg-blue-600' : 'bg-gray-600'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                  preferences.voice_settings.auto_transcription ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          Notifications
+        </h3>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Email Notifications
+            </label>
+            <button
+              type="button"
+              onClick={() => updatePreference('notifications', 'email_notifications', !preferences.notifications.email_notifications)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.notifications.email_notifications ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.notifications.email_notifications ? 'translate-x-6' : 'translate-x-1'
+              }`} />
             </button>
           </div>
+
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Push Notifications
+            </label>
+            <button
+              type="button"
+              onClick={() => updatePreference('notifications', 'push_notifications', !preferences.notifications.push_notifications)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.notifications.push_notifications ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.notifications.push_notifications ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Session Reminders
+            </label>
+            <button
+              type="button"
+              onClick={() => updatePreference('notifications', 'session_reminders', !preferences.notifications.session_reminders)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.notifications.session_reminders ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.notifications.session_reminders ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Progress Updates
+            </label>
+            <button
+              type="button"
+              onClick={() => updatePreference('notifications', 'progress_updates', !preferences.notifications.progress_updates)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.notifications.progress_updates ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.notifications.progress_updates ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Reminder Frequency
+            </label>
+            <select
+              value={preferences.notifications.reminder_frequency}
+              onChange={(e) => updatePreference('notifications', 'reminder_frequency', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="never">Never</option>
+            </select>
+          </div>
         </div>
+      </div>
+
+      {/* AI Coaching */}
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          AI Coaching Preferences
+        </h3>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Coaching Style
+            </label>
+            <select
+              value={preferences.ai_coaching.coaching_style}
+              onChange={(e) => updatePreference('ai_coaching', 'coaching_style', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              <option value="supportive">Supportive</option>
+              <option value="balanced">Balanced</option>
+              <option value="challenging">Challenging</option>
+              <option value="direct">Direct</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Feedback Detail Level
+            </label>
+            <select
+              value={preferences.ai_coaching.feedback_detail}
+              onChange={(e) => updatePreference('ai_coaching', 'feedback_detail', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              <option value="brief">Brief</option>
+              <option value="medium">Medium</option>
+              <option value="detailed">Detailed</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Difficulty Level
+            </label>
+            <select
+              value={preferences.ai_coaching.difficulty_level}
+              onChange={(e) => updatePreference('ai_coaching', 'difficulty_level', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+              <option value="expert">Expert</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Enable Real-time Feedback
+            </label>
+            <button
+              type="button"
+              onClick={() => updatePreference('ai_coaching', 'enable_real_time_feedback', !preferences.ai_coaching.enable_real_time_feedback)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.ai_coaching.enable_real_time_feedback ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.ai_coaching.enable_real_time_feedback ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Focus Areas
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {focusAreaOptions.map((area) => (
+                <button
+                  key={area}
+                  type="button"
+                  onClick={() => toggleFocusArea(area)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    (preferences.ai_coaching.focus_areas || []).includes(area)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                  style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+                >
+                  {area.replace('_', ' ').charAt(0).toUpperCase() + area.replace('_', ' ').slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy Settings */}
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-6" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+          Privacy Settings
+        </h3>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+                Save Recordings
+              </label>
+              <p className="text-xs text-gray-500">Save voice recordings for review and improvement</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => updatePreference('privacy', 'save_recordings', !preferences.privacy.save_recordings)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.privacy.save_recordings ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.privacy.save_recordings ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium text-gray-300" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+                Share Analytics
+              </label>
+              <p className="text-xs text-gray-500">Help improve CelesteOS with anonymous usage data</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => updatePreference('privacy', 'share_analytics', !preferences.privacy.share_analytics)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                preferences.privacy.share_analytics ? 'bg-blue-600' : 'bg-gray-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                preferences.privacy.share_analytics ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2" style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}>
+              Data Retention (Days)
+            </label>
+            <select
+              value={preferences.privacy.data_retention_days}
+              onChange={(e) => updatePreference('privacy', 'data_retention_days', parseInt(e.target.value))}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500"
+              style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+            >
+              <option value={7}>7 days</option>
+              <option value={30}>30 days</option>
+              <option value={90}>90 days</option>
+              <option value={365}>1 year</option>
+              <option value={-1}>Forever</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={savePreferences}
+          disabled={loading}
+          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+          style={{ fontFamily: 'Elquia, system-ui, sans-serif' }}
+        >
+          {loading ? 'Saving...' : 'Save Preferences'}
+        </button>
       </div>
     </div>
   );
