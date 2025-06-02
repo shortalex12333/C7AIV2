@@ -93,8 +93,8 @@ export const secureApiCall = async (url, options = {}) => {
       if (response.status === 401) {
         console.log('🚨 Authentication failed - redirecting to auth');
         // Clear invalid tokens
-        localStorage.removeItem('celeste7_access_token');
         localStorage.removeItem('celeste7_user_token');
+        localStorage.removeItem('celeste7_access_token');
         // Don't auto-redirect, let component handle it
         throw new Error('Authentication required');
       }
