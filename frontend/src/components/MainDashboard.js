@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { secureApiCall, initializeSession, ResponseCache } from '../utils/security';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const MainDashboard = ({ userId = "test-user-123" }) => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -14,7 +8,7 @@ const MainDashboard = ({ userId = "test-user-123" }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
   // Initialize security session
   useEffect(() => {
