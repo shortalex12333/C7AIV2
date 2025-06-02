@@ -31,7 +31,7 @@ const EnhancedAuthFlow = () => {
     setError('');
 
     try {
-      const response = await fetch('https://ventruk.app.n8n.cloud/webhook/auth/sign-in', {
+      const response = await fetch(`${backendUrl}/api/auth/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
