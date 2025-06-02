@@ -176,8 +176,6 @@ class GoalCreate(BaseModel):
     target_date: Optional[datetime] = None
 
 class GoalUpdate(BaseModel):
-    goal_id: str
-    user_id: str
     goal_text: Optional[str] = None
     target_date: Optional[datetime] = None
     completed: Optional[bool] = None
