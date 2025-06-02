@@ -38,7 +38,7 @@ const AuthPage = () => {
     setError('');
 
     try {
-      const endpoint = isSignUp ? '/auth/signup' : '/auth/signin';
+      const endpoint = isSignUp ? '/auth/sign-up' : '/auth/sign-in';
       const payload = isSignUp 
         ? formData 
         : { email: formData.email, password: formData.password };
