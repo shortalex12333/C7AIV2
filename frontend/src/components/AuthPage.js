@@ -38,14 +38,12 @@ const AuthPage = () => {
     setError('');
 
     try {
-      const signUpUrl = 'https://ventruk.app.n8n.cloud/webhook/auth/sign-up';
-      const signInUrl = 'https://ventruk.app.n8n.cloud/webhook/auth/sign-in';
-      const url = isSignUp ? signUpUrl : signInUrl;
+      const endpoint = isSignUp ? '/auth/signup' : '/auth/signin';
       const payload = isSignUp 
         ? formData 
         : { email: formData.email, password: formData.password };
 
-      const response = await axios.post(url, payload);
+      const response = await axios.post(`${API}${endpoint}`, payload);
       
       if (response.data) {
         login(response.data);
