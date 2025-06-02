@@ -20,7 +20,7 @@ const MetricsDisplay = ({ userId }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await secureApiCall(`${backendUrl}/api/performance-metrics/${userId}`, {
+      const response = await secureApiCall(`${backendUrl}/api/performance-metrics`, {
         method: 'GET'
       });
 
