@@ -87,10 +87,14 @@ app = FastAPI(title="Celeste7 API")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=[
+        "https://celeste-preview.preview.emergentagent.com",
+        "https://63a0c2a2-fd8a-4676-9c94-c642e7b65503.preview.emergentagent.com",
+        "https://11a27c10-faa2-4e83-aba0-2dee99e48bcb.preview.emergentagent.com"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # API router
