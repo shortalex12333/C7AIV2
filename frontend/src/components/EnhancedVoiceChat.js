@@ -36,7 +36,7 @@ const EnhancedVoiceChat = () => {
     if (!user?.userId) return;
 
     try {
-      const response = await secureApiCall(`${backendUrl}/api/conversation-history/${user.userId}`, {
+      const response = await secureApiCall(`${backendUrl}/api/conversation-history`, {
         method: 'GET'
       });
 
