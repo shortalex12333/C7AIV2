@@ -45,7 +45,7 @@ const AuthPage = () => {
         ? formData 
         : { email: formData.email, password: formData.password };
 
-      const response = await axios.post(`${API}${endpoint}`, payload);
+      const response = await axios.post(url, payload);
       
       if (response.data) {
         login(response.data);
