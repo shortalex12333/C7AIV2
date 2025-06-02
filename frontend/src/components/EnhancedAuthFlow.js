@@ -72,7 +72,7 @@ const EnhancedAuthFlow = () => {
 
     try {
       // Use the correct model structure expected by the backend
-      const response = await fetch(`${backendUrl}/api/auth/signup`, {
+      const response = await fetch(`${backendUrl}/auth/sign-up`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
