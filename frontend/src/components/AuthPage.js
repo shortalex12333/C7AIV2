@@ -6,7 +6,7 @@ import axios from 'axios';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}`;
+const API = `${BACKEND_URL}/api`;
 
 const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
