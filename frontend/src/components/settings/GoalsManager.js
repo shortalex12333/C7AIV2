@@ -25,7 +25,7 @@ const GoalsManager = ({ userId }) => {
   const loadGoals = async () => {
     setLoading(true);
     try {
-      const response = await secureApiCall(`${backendUrl}/api/user-goals/${userId}`, {
+      const response = await secureApiCall(`${backendUrl}/api/user-goals`, {
         method: 'GET'
       });
 
