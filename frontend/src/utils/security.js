@@ -12,7 +12,7 @@ const generateUUID = () => {
 
 // Get secure headers for API requests (updated for JWT Bearer token)
 export const getSecureHeaders = () => {
-  const userToken = localStorage.getItem('celeste7_access_token') || localStorage.getItem('celeste7_user_token');
+  const userToken = localStorage.getItem('celeste7_user_token') || localStorage.getItem('celeste7_access_token');
   const sessionId = sessionStorage.getItem('celeste7_session_id') || `session_${generateUUID()}`;
   
   const headers = {
