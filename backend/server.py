@@ -520,13 +520,6 @@ async def update_goal(goal_id: str, goal: GoalUpdate, current_user: dict = Depen
     try:
         user_id = current_user["sub"]
         
-        # Verify user ID matches
-        if goal.user_id != user_id:
-            raise HTTPException(
-                status_code=403,
-                detail="User ID mismatch"
-            )
-        
         # Verify goal exists and belongs to user
         existing_goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": user_id})
         if not existing_goal:
