@@ -248,7 +248,7 @@ async def auth_signup_options():
     return JSONResponse(
         status_code=204,
         headers={
-            "Access-Control-Allow-Origin": "https://63a0c2a2-fd8a-4676-9c94-c642e7b65503.preview.emergentagent.com",
+            "Access-Control-Allow-Origin": "https://11a27c10-faa2-4e83-aba0-2dee99e48bcb.preview.emergentagent.com",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Allow-Credentials": "true",
@@ -261,7 +261,7 @@ async def auth_signin_options():
     return JSONResponse(
         status_code=204,
         headers={
-            "Access-Control-Allow-Origin": "https://63a0c2a2-fd8a-4676-9c94-c642e7b65503.preview.emergentagent.com",
+            "Access-Control-Allow-Origin": "https://11a27c10-faa2-4e83-aba0-2dee99e48bcb.preview.emergentagent.com",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Allow-Credentials": "true",
