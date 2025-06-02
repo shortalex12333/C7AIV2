@@ -87,8 +87,22 @@ export const secureApiCall = async (url, options = {}) => {
     const response = await fetch(url, requestOptions);
     
     if (!response.ok) {
-      // Don't expose server errors to user
       console.error(`API Error: ${response.status} ${response.statusText}`);
+      
+      // Handle specific auth errors
+      if (response.status === 401) {
+        console.log('🚨 Authentication failed - redirecting to auth');
+        // Clear invalid tokens
+        localStorage.removeItem('celeste7_access_token');
+        localStorage.removeItem('celeste7_user_token');
+        // Don't auto-redirect, let component handle it
+        throw new Error('Authentication required');
+      }
+      
+      if (response.status === 404) {
+        throw new Error('Endpoint not found');
+      }
+      
       throw new Error('Unable to process request');
     }
     
@@ -100,7 +114,7 @@ export const secureApiCall = async (url, options = {}) => {
     // Return safe error message
     return {
       success: false,
-      error: 'Unable to process request',
+      error: error.message || 'Unable to process request',
       details: error.message
     };
   }
