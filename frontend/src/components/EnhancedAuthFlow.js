@@ -72,7 +72,7 @@ const EnhancedAuthFlow = () => {
 
     try {
       // Use the correct model structure expected by the backend
-      const response = await fetch('https://ventruk.app.n8n.cloud/webhook/auth/sign-up', {
+      const response = await fetch(`${backendUrl}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
