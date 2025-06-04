@@ -130,16 +130,26 @@ async def get_current_user(authorization: str = Header(None)):
         )
     
     token = authorization.split("Bearer ")[1]
-    payload = verify_token(token)
     
-    if payload is None:
+    # Verify token with N8N webhook
+    try:
+        verify_response = await call_n8n_webhook("auth_verify_token", {"token": token})
+        
+        if verify_response and verify_response.get("valid"):
+            return verify_response.get("user", {})
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception as e:
+        logger.error(f"Token verification error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    return payload
 
 # Models
 class MongoBaseModel(BaseModel):
