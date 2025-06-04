@@ -18,6 +18,7 @@ TEST_USER_LAST_NAME = "User"
 
 # Global variables to store auth token and user ID
 access_token = None
+refresh_token = None
 user_id = None
 session_id = None
 
