@@ -590,6 +590,8 @@ async def get_chat_history(session_id: str = Query(None), current_user: dict = D
             status_code=500,
             detail="An error occurred while retrieving chat history"
         )
+
+@api_router.post("/goals")
 async def create_goal(goal: GoalCreate, current_user: dict = Depends(get_current_user)):
     try:
         user_id = current_user["sub"]
