@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
-import EnhancedAuthFlow from './components/EnhancedAuthFlow';
+import SimpleAuthFlow from './components/SimpleAuthFlow';
 import MVPChatInterface from './components/MVPChatInterface';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -35,7 +35,7 @@ function App() {
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={<Navigate to="/chat" replace />} />
-              <Route path="/auth" element={<EnhancedAuthFlow />} />
+              <Route path="/auth" element={<SimpleAuthFlow />} />
               <Route 
                 path="/chat" 
                 element={
