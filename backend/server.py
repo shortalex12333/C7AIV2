@@ -469,7 +469,7 @@ async def voice_chat(data: VoiceChatMessage, current_user: dict = Depends(get_cu
 @api_router.get("/chat-history")
 async def get_chat_history(session_id: str = Query(None), current_user: dict = Depends(get_current_user)):
     try:
-        user_id = current_user["sub"]
+        user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
         
         # Build query
         query = {"user_id": user_id}
