@@ -15,6 +15,14 @@ const N8N_AUTH_URLS = {
   refresh: 'https://ventruk.app.n8n.cloud/webhook/auth/refresh'
 };
 
+// Backend URLs as fallback
+const BACKEND_AUTH_URLS = {
+  signup: `${process.env.REACT_APP_BACKEND_URL}/api/auth/signup`,
+  login: `${process.env.REACT_APP_BACKEND_URL}/api/auth/signin`,
+  logout: `${process.env.REACT_APP_BACKEND_URL}/api/auth/logout`,
+  refresh: `${process.env.REACT_APP_BACKEND_URL}/api/auth/refresh`
+};
+
 // Auth provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
