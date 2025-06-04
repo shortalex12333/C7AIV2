@@ -558,7 +558,38 @@ async def voice_chat(data: VoiceChatMessage, current_user: dict = Depends(get_cu
             detail="An error occurred during voice chat"
         )
 
-@api_router.post("/goals")
+@api_router.get("/chat-history")
+async def get_chat_history(session_id: str = Query(None), current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = current_user["sub"]
+        
+        # Build query
+        query = {"user_id": user_id}
+        if session_id:
+            query["session_id"] = session_id
+        
+        # Get chat history
+        chat_history = list(db.chat_interactions.find(query).sort("timestamp", 1))
+        
+        # Convert ObjectId to string for JSON serialization
+        for chat in chat_history:
+            chat["_id"] = str(chat["_id"])
+            if "timestamp" in chat:
+                chat["timestamp"] = chat["timestamp"].isoformat()
+        
+        return {
+            "user_id": user_id,
+            "session_id": session_id,
+            "chat_history": chat_history,
+            "total": len(chat_history)
+        }
+        
+    except Exception as e:
+        logger.error(f"Get chat history error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while retrieving chat history"
+        )
 async def create_goal(goal: GoalCreate, current_user: dict = Depends(get_current_user)):
     try:
         user_id = current_user["sub"]
