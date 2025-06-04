@@ -173,6 +173,14 @@ class VoiceInteraction(BaseModel):
     message: str
     session_id: Optional[str] = None
 
+class TextChatMessage(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+class VoiceChatMessage(BaseModel):
+    audio_data: str  # base64 encoded audio
+    session_id: Optional[str] = None
+
 class GoalCreate(BaseModel):
     user_id: str
     goal_text: str
