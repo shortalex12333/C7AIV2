@@ -26,16 +26,8 @@ db = client[os.environ.get("DB_NAME", "test_database")]
 
 # N8N Webhook URLs
 N8N_WEBHOOKS = {
-    "dashboard_view": "https://ventruk.n8n.cloud/webhook",
-    "goals_view": "https://ventruk.app.n8n.cloud/webhook-test/goals-view",
-    "metrics_view": "https://ventruk.app.n8n.cloud/webhook-test/metrics-view",
-    "goal_update": "https://ventruk.app.n8n.cloud/webhook-test/goals-update",
-    "send_notification": "https://ventruk.app.n8n.cloud/webhook-test/api/send-notification",
-    "intervention_queue": "https://ventruk.app.n8n.cloud/webhook-test/get-intervention-queue/api/intervention-queue",  # :userId handled dynamically
-    "pattern_detected": "https://ventruk.app.n8n.cloud/webhook-test/api/pattern-detected",
-    "weekly_report": "https://ventruk.app.n8n.cloud/webhook-test/get-weekly-report/api/weekly-report",  # :userId handled dynamically
-    "voice_interaction": "https://ventruk.app.n8n.cloud/webhook/voice-interaction",  # assuming this follows the pattern
-    "conversation_history": "https://ventruk.app.n8n.cloud/webhook-test/conversation-history"  # NEW
+    "text_chat": "https://ventruk.app.n8n.cloud/webhook/text-chat",
+    "voice_chat": "https://ventruk.app.n8n.cloud/webhook/voice-chat"
 }
 
 # Helper function to call N8N webhooks
