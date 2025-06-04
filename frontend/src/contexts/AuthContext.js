@@ -107,13 +107,19 @@ export const AuthProvider = ({ children }) => {
   // Signup method
   const signup = async (email, password, firstName, lastName) => {
     try {
+      console.log('Attempting signup with:', { email, firstName, lastName });
+      
       const response = await fetch(N8N_AUTH_URLS.signup, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, firstName, lastName })
       });
 
+      console.log('Signup response status:', response.status);
+      console.log('Signup response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('Signup response data:', data);
 
       if (response.ok && data.session) {
         // Store tokens
@@ -129,24 +135,31 @@ export const AuthProvider = ({ children }) => {
 
         return { success: true, user: data.user };
       } else {
-        return { success: false, error: data.error || 'Signup failed' };
+        console.error('Signup failed:', data);
+        return { success: false, error: data.error || data.message || 'Signup failed' };
       }
     } catch (error) {
-      console.error('Signup error:', error);
-      return { success: false, error: 'Network error occurred' };
+      console.error('Signup network error:', error);
+      return { success: false, error: `Network error: ${error.message}` };
     }
   };
 
   // Login method
   const login = async (email, password) => {
     try {
+      console.log('Attempting login with:', { email });
+      
       const response = await fetch(N8N_AUTH_URLS.login, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
 
+      console.log('Login response status:', response.status);
+      console.log('Login response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('Login response data:', data);
 
       if (response.ok && data.session) {
         // Store tokens
@@ -162,11 +175,12 @@ export const AuthProvider = ({ children }) => {
 
         return { success: true, user: data.user };
       } else {
-        return { success: false, error: data.error || 'Login failed' };
+        console.error('Login failed:', data);
+        return { success: false, error: data.error || data.message || 'Login failed' };
       }
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'Network error occurred' };
+      console.error('Login network error:', error);
+      return { success: false, error: `Network error: ${error.message}` };
     }
   };
 
