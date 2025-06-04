@@ -238,7 +238,7 @@ async def signup(user_data: UserSignUp):
                 "token_type": "bearer"
             },
             headers={
-                "Access-Control-Allow-Origin": "https://b3c8dfa8-1dea-4a86-b15c-c3663969b21c.preview.emergentagent.com",
+                "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type, Authorization",
                 "Access-Control-Allow-Credentials": "true"
