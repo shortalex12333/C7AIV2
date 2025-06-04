@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DisplayNameStep from './auth/DisplayNameStep';
+import { useAuth } from '../contexts/AuthContext';
 
 const EnhancedAuthFlow = () => {
-  const [mode, setMode] = useState('signin'); // 'signin', 'signup', 'display_name'
+  const [mode, setMode] = useState('signin'); // 'signin', 'signup'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     firstName: '',
     lastName: ''
   });
-  const [signupEmail, setSignupEmail] = useState(''); // Store email for display name step
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const navigate = useNavigate();
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const { login, signup } = useAuth();
 
   const handleInputChange = (e) => {
     setFormData({
@@ -31,23 +30,46 @@ const EnhancedAuthFlow = () => {
     setError('');
 
     try {
-      const response = await fetch(`${backendUrl}/api/auth/signin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
-      });
+      const result = await login(formData.email, formData.password);
 
-      const data = await response.json();
+      if (result.success) {
+        navigate('/chat');
+      } else {
+        setError(result.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setError('An error occurred during sign in');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (response.ok) {
-        // Store auth data
-        localStorage.setItem('celeste7_user_token', data.access_token);
-        localStorage.setItem('celeste7_user_id', data.user_id);
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await signup(
+        formData.email,
+        formData.password,
+        formData.firstName,
+        formData.lastName
+      );
+
+      if (result.success) {
+        navigate('/chat');
+      } else {
+        setError(result.error || 'Signup failed');
+      }
+    } catch (error) {
+      console.error('Sign up error:', error);
+      setError('An error occurred during sign up');
+    } finally {
+      setLoading(false);
+    }
+  };
         localStorage.setItem('celeste7_user_email', data.email);
         
         // Auth data is stored in localStorage
