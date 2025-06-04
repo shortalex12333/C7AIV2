@@ -362,7 +362,7 @@ async def refresh_token(request: Request):
 @api_router.post("/text-chat")
 async def text_chat(data: TextChatMessage, current_user: dict = Depends(get_current_user)):
     try:
-        user_id = current_user["sub"]
+        user_id = current_user.get("id") or current_user.get("user_id") or current_user.get("sub")
         
         # Generate a session ID if not provided
         session_id = data.session_id or str(uuid.uuid4())
