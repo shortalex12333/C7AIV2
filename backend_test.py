@@ -461,6 +461,7 @@ def run_all_tests():
     auth_results = {
         "signup": test_signup(),
         "signin": test_signin(),
+        "refresh_token": test_refresh_token(),
         "unauthorized_access": test_unauthorized_access()
     }
     
@@ -469,7 +470,8 @@ def run_all_tests():
         chat_results = {
             "text_chat": test_text_chat(),
             "voice_chat": test_voice_chat(),
-            "chat_history": test_chat_history()
+            "chat_history": test_chat_history(),
+            "logout": test_logout()
         }
         
         # Combine all results
