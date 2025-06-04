@@ -31,7 +31,6 @@ const MVPChatInterface = () => {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // Send text message
   const sendTextMessage = async () => {
     if (!textInput.trim()) return;
 
