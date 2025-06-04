@@ -214,51 +214,33 @@ async def auth_signin_options():
 @api_router.post("/auth/signup")
 async def signup(user_data: UserSignUp):
     try:
-        # First, check if user already exists in our local database
-        existing_user = db.users.find_one({"email": user_data.email})
-        if existing_user:
-            raise HTTPException(
-                status_code=409,
-                detail="A user with that email already exists."
-            )
-        
-        # Hash the password
-        hashed_password = pwd_context.hash(user_data.password)
-        
-        # Create a new user document
-        new_user = {
+        # Call N8N signup webhook
+        signup_payload = {
             "email": user_data.email,
-            "password": hashed_password,
+            "password": user_data.password,
             "firstName": user_data.firstName,
-            "lastName": user_data.lastName,
-            "created_at": datetime.now(),
-            "updated_at": datetime.now()
+            "lastName": user_data.lastName
         }
         
-        # Insert the user into the database
-        result = db.users.insert_one(new_user)
-        user_id = str(result.inserted_id)
+        n8n_response = await call_n8n_webhook("auth_signup", signup_payload)
         
-        # Generate access token
-        access_token = create_access_token(
-            data={"sub": user_id, "email": user_data.email}
-        )
-        
-        # Return the user data and token with CORS headers
-        return JSONResponse(
-            content={
-                "user_id": user_id,
-                "email": user_data.email,
-                "access_token": access_token,
-                "token_type": "bearer"
-            },
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        )
+        if n8n_response and not n8n_response.get("error"):
+            # Return the response from N8N with CORS headers
+            return JSONResponse(
+                content=n8n_response,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                    "Access-Control-Allow-Credentials": "true"
+                }
+            )
+        else:
+            error_msg = n8n_response.get("error", "Signup failed")
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
     except HTTPException as he:
         # Re-raise HTTP exceptions
         raise he
