@@ -2,16 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
-import LandingPage from './components/LandingPage';
-import SimplifiedLanding from './components/SimplifiedLanding';
-import AuthPage from './components/AuthPage';
 import EnhancedAuthFlow from './components/EnhancedAuthFlow';
-import Dashboard from './components/Dashboard';
-import MainDashboard from './components/MainDashboard';
-import EnhancedVoiceChat from './components/EnhancedVoiceChat';
-import OnboardingFlow from './components/OnboardingFlow';
-import Settings from './components/Settings';
-import EnhancedSettings from './components/EnhancedSettings';
+import MVPChatInterface from './components/MVPChatInterface';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
@@ -42,58 +34,17 @@ function App() {
         <BrowserRouter>
           <AnimatePresence mode="wait">
             <Routes>
-              <Route path="/" element={<SimplifiedLanding />} />
-              <Route path="/old-landing" element={<LandingPage />} />
+              <Route path="/" element={<Navigate to="/chat" replace />} />
               <Route path="/auth" element={<EnhancedAuthFlow />} />
-              <Route path="/old-auth" element={<AuthPage />} />
               <Route 
-                path="/dashboard" 
+                path="/chat" 
                 element={
                   <ProtectedRoute>
-                    <MainDashboard />
+                    <MVPChatInterface />
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/voice-chat" 
-                element={
-                  <ProtectedRoute>
-                    <EnhancedVoiceChat />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/old-voice-chat" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <ProtectedRoute>
-                    <EnhancedSettings />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/old-settings" 
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/onboarding" 
-                element={
-                  <ProtectedRoute>
-                    <OnboardingFlow />
-                  </ProtectedRoute>
-                } 
-              />
+              <Route path="*" element={<Navigate to="/chat" replace />} />
             </Routes>
           </AnimatePresence>
         </BrowserRouter>
