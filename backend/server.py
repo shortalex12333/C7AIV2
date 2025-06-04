@@ -87,8 +87,7 @@ app = FastAPI(title="AI Chat Interface API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://b3c8dfa8-1dea-4a86-b15c-c3663969b21c.preview.emergentagent.com",
-        "https://b3c8dfa8-1dea-4a86-b15c-c3663969b21c.preview.emergentagent.com",
+        "https://voice-text-agent.preview.emergentagent.com",
         "https://b3c8dfa8-1dea-4a86-b15c-c3663969b21c.preview.emergentagent.com"
     ],
     allow_credentials=True,
