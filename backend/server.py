@@ -27,7 +27,12 @@ db = client[os.environ.get("DB_NAME", "test_database")]
 # N8N Webhook URLs
 N8N_WEBHOOKS = {
     "text_chat": "https://ventruk.app.n8n.cloud/webhook/text-chat",
-    "voice_chat": "https://ventruk.app.n8n.cloud/webhook/voice-chat"
+    "voice_chat": "https://ventruk.app.n8n.cloud/webhook/voice-chat",
+    "auth_signup": "https://ventruk.app.n8n.cloud/webhook/auth/signup",
+    "auth_login": "https://ventruk.app.n8n.cloud/webhook/auth/login",
+    "auth_verify_token": "https://ventruk.app.n8n.cloud/webhook/auth/verify-token",
+    "auth_logout": "https://ventruk.app.n8n.cloud/webhook/auth/logout",
+    "auth_refresh": "https://ventruk.app.n8n.cloud/webhook/auth/refresh"
 }
 
 # Helper function to call N8N webhooks
