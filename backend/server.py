@@ -451,8 +451,8 @@ async def update_display_name(data: DisplayNameUpdate, current_user: dict = Depe
             detail="An error occurred while updating display name"
         )
 
-@api_router.post("/voice-chat")
-async def voice_chat(data: VoiceInteraction, current_user: dict = Depends(get_current_user)):
+@api_router.post("/text-chat")
+async def text_chat(data: TextChatMessage, current_user: dict = Depends(get_current_user)):
     try:
         user_id = current_user["sub"]
         
@@ -464,46 +464,93 @@ async def voice_chat(data: VoiceInteraction, current_user: dict = Depends(get_cu
             "user_id": user_id,
             "message": data.message,
             "session_id": session_id,
+            "type": "text",
             "timestamp": datetime.now()
         }
-        db.voice_interactions.insert_one(interaction)
+        db.chat_interactions.insert_one(interaction)
         
-        # Try to call N8N webhook
-        try:
-            n8n_response = await call_n8n_webhook(
-                "voice_interaction",
-                {
-                    "user_id": user_id,
-                    "message": data.message,
-                    "session_id": session_id
-                },
-                user_token=current_user.get("access_token"),
-                session_id=session_id,
-                user_id=user_id
-            )
-            logger.info(f"N8N webhook response: {n8n_response}")
-            
-            # If N8N webhook fails, generate a mock response
-            if not n8n_response or "error" in n8n_response:
-                n8n_response = {
-                    "response": "I'm sorry, I'm having trouble connecting to my services right now. Please try again later.",
-                    "session_id": session_id
-                }
-        except Exception as e:
-            logger.warning(f"N8N voice chat webhook failed: {str(e)}")
-            n8n_response = {
-                "response": "I'm sorry, I'm having trouble connecting to my services right now. Please try again later.",
-                "session_id": session_id
-            }
+        # Call N8N text chat webhook
+        payload = {
+            "user_id": user_id,
+            "message": data.message,
+            "session_id": session_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        n8n_response = await call_n8n_webhook("text_chat", payload)
+        
+        # Store the response
+        response_interaction = {
+            "user_id": user_id,
+            "message": n8n_response.get("response", "No response received"),
+            "session_id": session_id,
+            "type": "text_response",
+            "timestamp": datetime.now()
+        }
+        db.chat_interactions.insert_one(response_interaction)
         
         return {
             "user_id": user_id,
             "session_id": session_id,
-            "response": n8n_response.get("response", "I'm here to help you. What would you like to talk about?"),
+            "response": n8n_response.get("response", "No response received"),
+            "audio_response": n8n_response.get("audio_response"),  # base64 audio if available
+            "timestamp": datetime.now().isoformat(),
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Text chat error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during text chat"
+        )
+
+@api_router.post("/voice-chat")
+async def voice_chat(data: VoiceChatMessage, current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = current_user["sub"]
+        
+        # Generate a session ID if not provided
+        session_id = data.session_id or str(uuid.uuid4())
+        
+        # Store the interaction in the database
+        interaction = {
+            "user_id": user_id,
+            "audio_data": data.audio_data,
+            "session_id": session_id,
+            "type": "voice",
+            "timestamp": datetime.now()
+        }
+        db.chat_interactions.insert_one(interaction)
+        
+        # Call N8N voice chat webhook
+        payload = {
+            "user_id": user_id,
+            "audio_data": data.audio_data,
+            "session_id": session_id,
             "timestamp": datetime.now().isoformat()
         }
-    except HTTPException as he:
-        raise he
+        
+        n8n_response = await call_n8n_webhook("voice_chat", payload)
+        
+        # Store the response
+        response_interaction = {
+            "user_id": user_id,
+            "message": n8n_response.get("response", "No response received"),
+            "audio_response": n8n_response.get("audio_response"),
+            "session_id": session_id,
+            "type": "voice_response",
+            "timestamp": datetime.now()
+        }
+        db.chat_interactions.insert_one(response_interaction)
+        
+        return {
+            "user_id": user_id,
+            "session_id": session_id,
+            "response": n8n_response.get("response", "No response received"),
+            "audio_response": n8n_response.get("audio_response"),  # base64 audio response
+            "timestamp": datetime.now().isoformat(),
+            "success": True
+        }
     except Exception as e:
         logger.error(f"Voice chat error: {str(e)}")
         raise HTTPException(
