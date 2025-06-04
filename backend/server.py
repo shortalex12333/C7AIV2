@@ -289,6 +289,76 @@ async def signin(user_data: UserSignIn):
             detail="An error occurred during signin"
         )
 
+@api_router.post("/auth/logout")
+async def logout(current_user: dict = Depends(get_current_user)):
+    try:
+        # Call N8N logout webhook
+        logout_payload = {
+            "user_id": current_user.get("id") or current_user.get("user_id")
+        }
+        
+        n8n_response = await call_n8n_webhook("auth_logout", logout_payload)
+        
+        return JSONResponse(
+            content=n8n_response or {"success": True, "message": "Logged out successfully"},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Access-Control-Allow-Credentials": "true"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during logout"
+        )
+
+@api_router.post("/auth/refresh")
+async def refresh_token(request: Request):
+    try:
+        body = await request.json()
+        refresh_token = body.get("refresh_token")
+        
+        if not refresh_token:
+            raise HTTPException(
+                status_code=400,
+                detail="Refresh token is required"
+            )
+        
+        # Call N8N refresh webhook
+        refresh_payload = {
+            "refresh_token": refresh_token
+        }
+        
+        n8n_response = await call_n8n_webhook("auth_refresh", refresh_payload)
+        
+        if n8n_response and not n8n_response.get("error"):
+            return JSONResponse(
+                content=n8n_response,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                    "Access-Control-Allow-Credentials": "true"
+                }
+            )
+        else:
+            error_msg = n8n_response.get("error", "Token refresh failed")
+            raise HTTPException(
+                status_code=401,
+                detail=error_msg
+            )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Refresh token error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during token refresh"
+        )
+
 @api_router.post("/text-chat")
 async def text_chat(data: TextChatMessage, current_user: dict = Depends(get_current_user)):
     try:
