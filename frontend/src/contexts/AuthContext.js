@@ -185,35 +185,63 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting login with:', { email });
       
-      const response = await fetch(N8N_AUTH_URLS.login, {
+      // Try N8N direct first
+      let response = await fetch(N8N_AUTH_URLS.login, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
 
-      console.log('Login response status:', response.status);
-      console.log('Login response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('N8N Direct login response status:', response.status);
+
+      // If N8N direct fails (CORS, 404, 500, etc.), try backend proxy
+      if (!response.ok || response.status >= 400) {
+        console.log('N8N direct failed, trying backend proxy...');
+        
+        response = await fetch(BACKEND_AUTH_URLS.login, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        console.log('Backend proxy login response status:', response.status);
+      }
 
       const data = await response.json();
       console.log('Login response data:', data);
 
-      if (response.ok && data.session) {
-        // Store tokens
-        localStorage.setItem('access_token', data.session.access_token);
-        localStorage.setItem('refresh_token', data.session.refresh_token);
+      if (response.ok) {
+        // Handle N8N session format
+        if (data.session) {
+          localStorage.setItem('access_token', data.session.access_token);
+          localStorage.setItem('refresh_token', data.session.refresh_token);
 
-        // Set user state
-        setUser({
-          ...data.user,
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
+          setUser({
+            ...data.user,
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token
+          });
 
-        return { success: true, user: data.user };
-      } else {
-        console.error('Login failed:', data);
-        return { success: false, error: data.error || data.message || 'Login failed' };
+          return { success: true, user: data.user };
+        }
+        // Handle direct token format (fallback)
+        else if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+          if (data.refresh_token) {
+            localStorage.setItem('refresh_token', data.refresh_token);
+          }
+
+          setUser({
+            ...data,
+            access_token: data.access_token
+          });
+
+          return { success: true, user: data };
+        }
       }
+
+      console.error('Login failed:', data);
+      return { success: false, error: data.error || data.detail || data.message || 'Login failed' };
     } catch (error) {
       console.error('Login network error:', error);
       return { success: false, error: `Network error: ${error.message}` };
