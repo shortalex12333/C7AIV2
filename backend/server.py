@@ -254,43 +254,31 @@ async def signup(user_data: UserSignUp):
 @api_router.post("/auth/signin")
 async def signin(user_data: UserSignIn):
     try:
-        # Find the user in our local database
-        user = db.users.find_one({"email": user_data.email})
-        if not user:
+        # Call N8N login webhook
+        login_payload = {
+            "email": user_data.email,
+            "password": user_data.password
+        }
+        
+        n8n_response = await call_n8n_webhook("auth_login", login_payload)
+        
+        if n8n_response and not n8n_response.get("error"):
+            # Return the response from N8N with CORS headers
+            return JSONResponse(
+                content=n8n_response,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                    "Access-Control-Allow-Credentials": "true"
+                }
+            )
+        else:
+            error_msg = n8n_response.get("error", "Login failed")
             raise HTTPException(
                 status_code=401,
-                detail="Invalid email or password"
+                detail=error_msg
             )
-        
-        # Verify password
-        if not pwd_context.verify(user_data.password, user["password"]):
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid email or password"
-            )
-        
-        # Generate access token
-        user_id = str(user["_id"])
-        access_token = create_access_token(
-            data={"sub": user_id, "email": user_data.email}
-        )
-        
-        # Return the user data and token with CORS headers
-        return JSONResponse(
-            content={
-                "user_id": user_id,
-                "email": user_data.email,
-                "display_name": user.get("display_name", ""),
-                "access_token": access_token,
-                "token_type": "bearer"
-            },
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        )
     except HTTPException as he:
         # Re-raise HTTP exceptions
         raise he
