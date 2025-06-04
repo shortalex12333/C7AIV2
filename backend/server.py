@@ -33,16 +33,22 @@ N8N_WEBHOOKS = {
 # Helper function to call N8N webhooks
 async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_token: str = None, session_id: str = None, user_id: str = None):
     try:
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization"
+        }
         if user_token:
             headers["Authorization"] = f"Bearer {user_token}"
         if session_id:
             headers["X-Session-ID"] = session_id
             
-        # Handle dynamic URLs with userId
+        # Get webhook URL
         webhook_url = N8N_WEBHOOKS.get(webhook_name, "")
-        if ":userId" in webhook_url and user_id:
-            webhook_url = webhook_url.replace(":userId", user_id)
+        if not webhook_url:
+            logger.error(f"Unknown webhook: {webhook_name}")
+            return {"error": "Unknown webhook"}
             
         logger.info(f"Calling N8N webhook: {webhook_name} at {webhook_url}")
         
@@ -51,19 +57,20 @@ async def call_n8n_webhook(webhook_name: str, payload: Dict[str, Any], user_toke
                 webhook_url,
                 json=payload,
                 headers=headers,
-                timeout=10.0  # Add timeout to prevent hanging
+                timeout=30.0  # Increased timeout for AI processing
             )
             
         if response.status_code >= 200 and response.status_code < 300:
-            return response.json()
+            try:
+                return response.json()
+            except:
+                return {"response": response.text}
         else:
             logger.warning(f"N8N webhook {webhook_name} returned status {response.status_code}: {response.text}")
-            # Return a mock response for testing
-            return {"status": "mock_success", "message": "This is a mock response for testing"}
+            return {"error": f"Webhook returned status {response.status_code}"}
     except Exception as e:
         logger.error(f"Error calling N8N webhook {webhook_name}: {str(e)}")
-        # Return a mock response for testing
-        return {"status": "mock_success", "message": "This is a mock response for testing"}
+        return {"error": str(e)}
 
 # JWT Configuration
 SECRET_KEY = "your-secret-key"  # In production, use a secure environment variable
