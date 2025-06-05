@@ -89,12 +89,15 @@ const MVPChatInterface = () => {
       const data = await response.json();
       console.log('Text chat response data:', data);
 
-      // Handle N8N response
+      // Handle N8N response with correct nested structure
       const aiMessage = {
         id: Date.now() + 1,
         type: 'ai_response',
-        content: data.text?.content || data.response || data.text || 'No response received',
-        audio_response: data.audio_response || data.audio,
+        content: data.text_content?.content || data.response || data.text || 'No response received',
+        audio_response: data.audio_reply,  // N8N uses 'audio_reply' field
+        pattern_insight: data.text_content?.pattern_insight,
+        action_items: data.text_content?.action_items,
+        strategic_question: data.text_content?.strategic_question,
         timestamp: data.timestamp || new Date().toISOString()
       };
       setMessages(prev => [...prev, aiMessage]);
