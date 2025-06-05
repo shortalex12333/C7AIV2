@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,12 +10,8 @@ const SimpleAuthFlow = () => {
     firstName: '',
     lastName: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  // Request deduplication
-  const pendingRequest = useRef(null);
-  const lastSubmitTime = useRef(0);
 
   const navigate = useNavigate();
   const { login, signup } = useAuth();
@@ -28,76 +24,22 @@ const SimpleAuthFlow = () => {
     setError(''); // Clear error on input change
   };
 
-  const handleSignIn = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     
     // Prevent duplicate submissions
-    if (isLoading || pendingRequest.current) return;
+    if (isSubmitting) return;
     
-    // Debounce rapid submissions (prevent clicks within 1 second)
-    const now = Date.now();
-    if (now - lastSubmitTime.current < 1000) {
-      console.log('Request blocked - too rapid');
-      return;
-    }
-    lastSubmitTime.current = now;
-
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError('');
 
     try {
-      // Use pending request pattern to prevent duplicates
-      if (pendingRequest.current) {
-        return await pendingRequest.current;
-      }
-
-      pendingRequest.current = login(formData.email, formData.password);
-      const result = await pendingRequest.current;
-
-      if (result.success) {
-        navigate('/chat');
-      } else {
-        setError(result.error || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Sign in error:', error);
-      setError('An error occurred during sign in');
-    } finally {
-      setIsLoading(false);
-      pendingRequest.current = null;
-    }
-  };
-
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    
-    // Prevent duplicate submissions
-    if (isLoading || pendingRequest.current) return;
-    
-    // Debounce rapid submissions (prevent clicks within 1 second)
-    const now = Date.now();
-    if (now - lastSubmitTime.current < 1000) {
-      console.log('Request blocked - too rapid');
-      return;
-    }
-    lastSubmitTime.current = now;
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Use pending request pattern to prevent duplicates
-      if (pendingRequest.current) {
-        return await pendingRequest.current;
-      }
-
-      pendingRequest.current = signup(
+      const result = await signup(
         formData.email,
         formData.password,
         formData.firstName,
         formData.lastName
       );
-      const result = await pendingRequest.current;
 
       if (result.success) {
         navigate('/chat');
@@ -108,14 +50,38 @@ const SimpleAuthFlow = () => {
       console.error('Sign up error:', error);
       setError('An error occurred during sign up');
     } finally {
-      setIsLoading(false);
-      pendingRequest.current = null;
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignin = async (e) => {
+    e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const result = await login(formData.email, formData.password);
+
+      if (result.success) {
+        navigate('/chat');
+      } else {
+        setError(result.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setError('An error occurred during sign in');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleModeToggle = () => {
-    // Don't allow mode change during loading
-    if (isLoading) return;
+    // Don't allow mode change during submission
+    if (isSubmitting) return;
     
     setMode(mode === 'signin' ? 'signup' : 'signin');
     setError('');
@@ -148,7 +114,7 @@ const SimpleAuthFlow = () => {
         )}
 
         {/* Auth Form */}
-        <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="space-y-4">
+        <form onSubmit={mode === 'signin' ? handleSignin : handleSignup} className="space-y-4">
           {mode === 'signup' && (
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -157,7 +123,7 @@ const SimpleAuthFlow = () => {
                 placeholder="First Name"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
@@ -167,7 +133,7 @@ const SimpleAuthFlow = () => {
                 placeholder="Last Name"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
@@ -180,7 +146,7 @@ const SimpleAuthFlow = () => {
             placeholder="Email address"
             value={formData.email}
             onChange={handleInputChange}
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             required
           />
@@ -191,23 +157,23 @@ const SimpleAuthFlow = () => {
             placeholder="Password"
             value={formData.password}
             onChange={handleInputChange}
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             required
           />
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <div className="flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                 {mode === 'signin' ? 'Signing in...' : 'Creating account...'}
               </div>
             ) : (
-              mode === 'signin' ? 'Sign In' : 'Create Account'
+              mode === 'signin' ? 'Sign In' : 'Sign Up'
             )}
           </button>
         </form>
@@ -218,7 +184,7 @@ const SimpleAuthFlow = () => {
             {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}{' '}
             <button
               onClick={handleModeToggle}
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="text-blue-400 hover:text-blue-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
