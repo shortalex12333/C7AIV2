@@ -180,36 +180,62 @@ const MVPChatInterface = () => {
     setMessages(prev => [...prev, userMessage]);
 
     try {
+      // Get stored user data for N8N webhook
+      const userID = localStorage.getItem('userID');
+      const sessionID = localStorage.getItem('sessionID');
+      
+      if (!userID || !sessionID) {
+        throw new Error('User not authenticated. Please login first.');
+      }
+
       const base64Audio = await audioToBase64(audioBlob);
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/voice-chat`, {
+      // Send directly to N8N voice webhook with correct payload structure
+      const response = await fetch('https://ventruk.app.n8n.cloud/webhook/voice-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.access_token}`
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify({
+          userID: userID,
+          sessionID: sessionID,
           audio_data: base64Audio,
-          session_id: sessionId
+          type: 'voice_message',
+          timestamp: new Date().toISOString(),
+          metadata: {
+            source: 'web',
+            version: '1.0'
+          }
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
-      if (response.ok) {
-        const aiMessage = {
-          id: Date.now() + 1,
-          type: 'ai_response',
-          content: data.response,
-          audio_response: data.audio_response,
-          timestamp: data.timestamp
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error(data.detail || 'Failed to send voice message');
-      }
+      // Handle N8N response
+      const aiMessage = {
+        id: Date.now() + 1,
+        type: 'ai_response',
+        content: data.text?.content || data.response || data.text || 'No response received',
+        audio_response: data.audio_response || data.audio,
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+
     } catch (error) {
       console.error('Voice chat error:', error);
+      
+      if (error.message.includes('not authenticated')) {
+        // Redirect to login
+        logout();
+        return;
+      }
+      
       const errorMessage = {
         id: Date.now() + 1,
         type: 'error',
