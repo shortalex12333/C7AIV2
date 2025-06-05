@@ -38,6 +38,16 @@ const MVPChatInterface = () => {
   const sendTextMessage = async () => {
     if (!textInput.trim()) return;
 
+    // Check authentication before sending
+    const userID = localStorage.getItem('userID');
+    const sessionID = localStorage.getItem('sessionID');
+    
+    if (!userID || !sessionID || userID === 'undefined' || sessionID === 'undefined') {
+      console.error('User not authenticated properly');
+      logout();
+      return;
+    }
+
     const userMessage = {
       id: Date.now(),
       type: 'user_text',
@@ -52,40 +62,32 @@ const MVPChatInterface = () => {
     setTextInput('');
 
     try {
-      // Get stored user data for N8N webhook
-      const userID = localStorage.getItem('userID');
-      const sessionID = localStorage.getItem('sessionID');
-      
-      if (!userID || !sessionID) {
-        throw new Error('User not authenticated. Please login first.');
-      }
+      console.log('Sending text message with userID:', userID, 'sessionID:', sessionID);
 
       // Send directly to N8N webhook with correct payload structure
       const response = await fetch('https://ventruk.app.n8n.cloud/webhook/text-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          userID: userID,
-          sessionID: sessionID,
+          userID: userID,           // Must be actual userID, not undefined
+          sessionID: sessionID,     // Must be actual sessionID, not undefined
           text: messageToSend,
           type: 'message',
-          timestamp: new Date().toISOString(),
-          metadata: {
-            source: 'web',
-            version: '1.0'
-          }
+          timestamp: new Date().toISOString()
         })
       });
+
+      console.log('Text chat response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Text chat response data:', data);
 
       // Handle N8N response
       const aiMessage = {
@@ -99,12 +101,6 @@ const MVPChatInterface = () => {
 
     } catch (error) {
       console.error('Text chat error:', error);
-      
-      if (error.message.includes('not authenticated')) {
-        // Redirect to login
-        logout();
-        return;
-      }
       
       const errorMessage = {
         id: Date.now() + 1,
