@@ -143,27 +143,34 @@ export const AuthProvider = ({ children }) => {
       console.log('Signup response data:', data);
 
       if (response.ok) {
-        // Handle N8N session format
-        if (data.session) {
-          // Store N8N session tokens
-          localStorage.setItem('access_token', data.session.access_token);
-          localStorage.setItem('refresh_token', data.session.refresh_token);
+        // Handle the specific login response structure from your backend
+        if (data.success && data.user && data.session) {
+          // Store authentication tokens if available
+          if (data.session.access_token) {
+            localStorage.setItem('access_token', data.session.access_token);
+          }
+          if (data.session.refresh_token) {
+            localStorage.setItem('refresh_token', data.session.refresh_token);
+          }
 
-          // Store user data for N8N webhooks
-          localStorage.setItem('userID', data.user.userid || data.user.userID || data.user.id);
-          localStorage.setItem('sessionID', data.user.session_id || data.session.sessionID);
+          // Store user data for N8N webhooks - using the correct response structure
+          localStorage.setItem('userID', data.user.userID);
+          localStorage.setItem('sessionID', data.session.sessionID);
           localStorage.setItem('userEmail', data.user.email);
+          localStorage.setItem('displayName', data.user.displayName);
 
           setUser({
-            ...data.user,
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token
+            userID: data.user.userID,
+            email: data.user.email,
+            displayName: data.user.displayName,
+            sessionID: data.session.sessionID,
+            access_token: data.session.access_token
           });
 
-          return { success: true, user: data.user };
+          return { success: true, user: data.user, session: data.session };
         }
-        // Handle direct response format (when N8N returns user data directly)
-        else if (data.userid || data.access_token) {
+        // Fallback for other response formats
+        else if (data.userid || data.userID || data.access_token) {
           // Store tokens if available
           if (data.access_token) {
             localStorage.setItem('access_token', data.access_token);
@@ -172,13 +179,16 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('refresh_token', data.refresh_token);
           }
 
-          // Store user data for N8N webhooks
-          localStorage.setItem('userID', data.userid || data.userID || data.id);
-          localStorage.setItem('sessionID', data.session_id || data.sessionID);
+          // Store user data with fallback field names
+          localStorage.setItem('userID', data.userID || data.userid || data.id);
+          localStorage.setItem('sessionID', data.sessionID || data.session_id);
           localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('displayName', data.displayName || data.display_name);
 
           setUser({
-            ...data,
+            userID: data.userID || data.userid || data.id,
+            email: data.email,
+            displayName: data.displayName || data.display_name,
             access_token: data.access_token
           });
 
