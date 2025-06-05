@@ -168,6 +168,17 @@ const MVPChatInterface = () => {
   const sendVoiceMessage = async (audioBlob) => {
     setIsLoading(true);
 
+    // Check authentication before sending
+    const userID = localStorage.getItem('userID');
+    const sessionID = localStorage.getItem('sessionID');
+    
+    if (!userID || !sessionID || userID === 'undefined' || sessionID === 'undefined') {
+      console.error('User not authenticated properly');
+      logout();
+      setIsLoading(false);
+      return;
+    }
+
     const userMessage = {
       id: Date.now(),
       type: 'user_voice',
@@ -179,13 +190,7 @@ const MVPChatInterface = () => {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      // Get stored user data for N8N webhook
-      const userID = localStorage.getItem('userID');
-      const sessionID = localStorage.getItem('sessionID');
-      
-      if (!userID || !sessionID) {
-        throw new Error('User not authenticated. Please login first.');
-      }
+      console.log('Sending voice message with userID:', userID, 'sessionID:', sessionID);
 
       const base64Audio = await audioToBase64(audioBlob);
 
@@ -194,27 +199,25 @@ const MVPChatInterface = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          userID: userID,
-          sessionID: sessionID,
+          userID: userID,           // Must be actual userID, not undefined
+          sessionID: sessionID,     // Must be actual sessionID, not undefined
           audio_data: base64Audio,
           type: 'voice_message',
-          timestamp: new Date().toISOString(),
-          metadata: {
-            source: 'web',
-            version: '1.0'
-          }
+          timestamp: new Date().toISOString()
         })
       });
+
+      console.log('Voice chat response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Voice chat response data:', data);
 
       // Handle N8N response
       const aiMessage = {
@@ -228,12 +231,6 @@ const MVPChatInterface = () => {
 
     } catch (error) {
       console.error('Voice chat error:', error);
-      
-      if (error.message.includes('not authenticated')) {
-        // Redirect to login
-        logout();
-        return;
-      }
       
       const errorMessage = {
         id: Date.now() + 1,
