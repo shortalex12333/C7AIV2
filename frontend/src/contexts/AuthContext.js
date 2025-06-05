@@ -360,6 +360,12 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
+  // Check if user is properly authenticated
+  const isAuthenticated = () => {
+    const userID = localStorage.getItem('userID');
+    return userID && userID !== 'undefined' && userID !== 'null' && userID.trim() !== '';
+  };
+
   // Context value
   const value = {
     user,
@@ -369,7 +375,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshAccessToken,
     authenticatedFetch,
-    isAuthenticated: !!user
+    isAuthenticated: isAuthenticated()
   };
 
   return (
