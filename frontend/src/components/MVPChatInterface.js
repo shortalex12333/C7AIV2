@@ -8,10 +8,22 @@ const MVPChatInterface = () => {
   const [textInput, setTextInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const isAuthenticated = () => {
+      const userID = localStorage.getItem('userID');
+      return userID && userID !== 'undefined' && userID !== 'null' && userID.trim() !== '';
+    };
+
+    if (!isAuthenticated()) {
+      console.error('User not authenticated, redirecting to login');
+      logout();
+    }
+  }, [logout]);
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -21,15 +33,6 @@ const MVPChatInterface = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Generate session ID on component mount
-  useEffect(() => {
-    setSessionId(generateSessionId());
-  }, []);
-
-  const generateSessionId = () => {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
 
   // Send text message
   const sendTextMessage = async () => {
