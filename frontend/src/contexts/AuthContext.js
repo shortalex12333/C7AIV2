@@ -125,66 +125,82 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting signup with:', { email, firstName, lastName });
       
-      // Try N8N direct first
-      let response = await fetch(N8N_AUTH_URLS.signup, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, firstName, lastName })
-      });
+      // Prevent duplicate signup requests
+      if (pendingRequests.current.signup) {
+        console.log('Signup already in progress, returning existing promise');
+        return await pendingRequests.current.signup;
+      }
 
-      console.log('N8N Direct signup response status:', response.status);
-
-      // If N8N direct fails (CORS, 404, 500, etc.), try backend proxy
-      if (!response.ok || response.status >= 400) {
-        console.log('N8N direct failed, trying backend proxy...');
-        
-        response = await fetch(BACKEND_AUTH_URLS.signup, {
+      // Create the signup promise and store it
+      pendingRequests.current.signup = (async () => {
+        // Try N8N direct first
+        let response = await fetch(N8N_AUTH_URLS.signup, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, firstName, lastName })
         });
 
-        console.log('Backend proxy signup response status:', response.status);
-      }
+        console.log('N8N Direct signup response status:', response.status);
 
-      const data = await response.json();
-      console.log('Signup response data:', data);
-
-      if (response.ok) {
-        // Handle N8N session format
-        if (data.session) {
-          localStorage.setItem('access_token', data.session.access_token);
-          localStorage.setItem('refresh_token', data.session.refresh_token);
-
-          setUser({
-            ...data.user,
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token
+        // If N8N direct fails (CORS, 404, 500, etc.), try backend proxy ONCE (no retry)
+        if (!response.ok || response.status >= 400) {
+          console.log('N8N direct failed, trying backend proxy...');
+          
+          response = await fetch(BACKEND_AUTH_URLS.signup, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, firstName, lastName })
           });
 
-          return { success: true, user: data.user };
+          console.log('Backend proxy signup response status:', response.status);
         }
-        // Handle direct token format (fallback)
-        else if (data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
-          if (data.refresh_token) {
-            localStorage.setItem('refresh_token', data.refresh_token);
+
+        const data = await response.json();
+        console.log('Signup response data:', data);
+
+        if (response.ok) {
+          // Handle N8N session format
+          if (data.session) {
+            localStorage.setItem('access_token', data.session.access_token);
+            localStorage.setItem('refresh_token', data.session.refresh_token);
+
+            setUser({
+              ...data.user,
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token
+            });
+
+            return { success: true, user: data.user };
           }
+          // Handle direct token format (fallback)
+          else if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            if (data.refresh_token) {
+              localStorage.setItem('refresh_token', data.refresh_token);
+            }
 
-          setUser({
-            ...data,
-            access_token: data.access_token
-          });
+            setUser({
+              ...data,
+              access_token: data.access_token
+            });
 
-          return { success: true, user: data };
+            return { success: true, user: data };
+          }
         }
-      }
 
-      console.error('Signup failed:', data);
-      return { success: false, error: data.error || data.detail || data.message || 'Signup failed' };
+        console.error('Signup failed:', data);
+        return { success: false, error: data.error || data.detail || data.message || 'Signup failed' };
+      })();
+
+      const result = await pendingRequests.current.signup;
+      return result;
+
     } catch (error) {
       console.error('Signup network error:', error);
       return { success: false, error: `Network error: ${error.message}` };
+    } finally {
+      // Clear the pending request
+      pendingRequests.current.signup = null;
     }
   };
 
@@ -193,66 +209,82 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting login with:', { email });
       
-      // Try N8N direct first
-      let response = await fetch(N8N_AUTH_URLS.login, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
+      // Prevent duplicate login requests
+      if (pendingRequests.current.login) {
+        console.log('Login already in progress, returning existing promise');
+        return await pendingRequests.current.login;
+      }
 
-      console.log('N8N Direct login response status:', response.status);
-
-      // If N8N direct fails (CORS, 404, 500, etc.), try backend proxy
-      if (!response.ok || response.status >= 400) {
-        console.log('N8N direct failed, trying backend proxy...');
-        
-        response = await fetch(BACKEND_AUTH_URLS.login, {
+      // Create the login promise and store it
+      pendingRequests.current.login = (async () => {
+        // Try N8N direct first
+        let response = await fetch(N8N_AUTH_URLS.login, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
 
-        console.log('Backend proxy login response status:', response.status);
-      }
+        console.log('N8N Direct login response status:', response.status);
 
-      const data = await response.json();
-      console.log('Login response data:', data);
-
-      if (response.ok) {
-        // Handle N8N session format
-        if (data.session) {
-          localStorage.setItem('access_token', data.session.access_token);
-          localStorage.setItem('refresh_token', data.session.refresh_token);
-
-          setUser({
-            ...data.user,
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token
+        // If N8N direct fails (CORS, 404, 500, etc.), try backend proxy ONCE (no retry)
+        if (!response.ok || response.status >= 400) {
+          console.log('N8N direct failed, trying backend proxy...');
+          
+          response = await fetch(BACKEND_AUTH_URLS.login, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
           });
 
-          return { success: true, user: data.user };
+          console.log('Backend proxy login response status:', response.status);
         }
-        // Handle direct token format (fallback)
-        else if (data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
-          if (data.refresh_token) {
-            localStorage.setItem('refresh_token', data.refresh_token);
+
+        const data = await response.json();
+        console.log('Login response data:', data);
+
+        if (response.ok) {
+          // Handle N8N session format
+          if (data.session) {
+            localStorage.setItem('access_token', data.session.access_token);
+            localStorage.setItem('refresh_token', data.session.refresh_token);
+
+            setUser({
+              ...data.user,
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token
+            });
+
+            return { success: true, user: data.user };
           }
+          // Handle direct token format (fallback)
+          else if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            if (data.refresh_token) {
+              localStorage.setItem('refresh_token', data.refresh_token);
+            }
 
-          setUser({
-            ...data,
-            access_token: data.access_token
-          });
+            setUser({
+              ...data,
+              access_token: data.access_token
+            });
 
-          return { success: true, user: data };
+            return { success: true, user: data };
+          }
         }
-      }
 
-      console.error('Login failed:', data);
-      return { success: false, error: data.error || data.detail || data.message || 'Login failed' };
+        console.error('Login failed:', data);
+        return { success: false, error: data.error || data.detail || data.message || 'Login failed' };
+      })();
+
+      const result = await pendingRequests.current.login;
+      return result;
+
     } catch (error) {
       console.error('Login network error:', error);
       return { success: false, error: `Network error: ${error.message}` };
+    } finally {
+      // Clear the pending request
+      pendingRequests.current.login = null;
     }
   };
 
