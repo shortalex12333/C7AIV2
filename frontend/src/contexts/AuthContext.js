@@ -28,6 +28,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Request deduplication at the context level
+  const pendingRequests = useRef({
+    signup: null,
+    login: null,
+    refresh: null,
+    logout: null
+  });
+
   // Initialize user from localStorage on component mount
   useEffect(() => {
     const initUser = async () => {
