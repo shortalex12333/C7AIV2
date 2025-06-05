@@ -31,6 +31,7 @@ const MVPChatInterface = () => {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   };
 
+  // Send text message
   const sendTextMessage = async () => {
     if (!textInput.trim()) return;
 
@@ -48,34 +49,60 @@ const MVPChatInterface = () => {
     setTextInput('');
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/text-chat`, {
+      // Get stored user data for N8N webhook
+      const userID = localStorage.getItem('userID');
+      const sessionID = localStorage.getItem('sessionID');
+      
+      if (!userID || !sessionID) {
+        throw new Error('User not authenticated. Please login first.');
+      }
+
+      // Send directly to N8N webhook with correct payload structure
+      const response = await fetch('https://ventruk.app.n8n.cloud/webhook/text-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.access_token}`
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify({
-          message: messageToSend,
-          session_id: sessionId
+          userID: userID,
+          sessionID: sessionID,
+          text: messageToSend,
+          type: 'message',
+          timestamp: new Date().toISOString(),
+          metadata: {
+            source: 'web',
+            version: '1.0'
+          }
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
-      if (response.ok) {
-        const aiMessage = {
-          id: Date.now() + 1,
-          type: 'ai_response',
-          content: data.response,
-          audio_response: data.audio_response,
-          timestamp: data.timestamp
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error(data.detail || 'Failed to send message');
-      }
+      // Handle N8N response
+      const aiMessage = {
+        id: Date.now() + 1,
+        type: 'ai_response',
+        content: data.text?.content || data.response || data.text || 'No response received',
+        audio_response: data.audio_response || data.audio,
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+
     } catch (error) {
       console.error('Text chat error:', error);
+      
+      if (error.message.includes('not authenticated')) {
+        // Redirect to login
+        logout();
+        return;
+      }
+      
       const errorMessage = {
         id: Date.now() + 1,
         type: 'error',
