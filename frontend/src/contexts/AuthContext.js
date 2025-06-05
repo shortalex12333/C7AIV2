@@ -145,8 +145,14 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         // Handle N8N session format
         if (data.session) {
+          // Store N8N session tokens
           localStorage.setItem('access_token', data.session.access_token);
           localStorage.setItem('refresh_token', data.session.refresh_token);
+
+          // Store user data for N8N webhooks
+          localStorage.setItem('userID', data.user.userid || data.user.userID || data.user.id);
+          localStorage.setItem('sessionID', data.user.session_id || data.session.sessionID);
+          localStorage.setItem('userEmail', data.user.email);
 
           setUser({
             ...data.user,
@@ -156,12 +162,20 @@ export const AuthProvider = ({ children }) => {
 
           return { success: true, user: data.user };
         }
-        // Handle direct token format (fallback)
-        else if (data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
+        // Handle direct response format (when N8N returns user data directly)
+        else if (data.userid || data.access_token) {
+          // Store tokens if available
+          if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+          }
           if (data.refresh_token) {
             localStorage.setItem('refresh_token', data.refresh_token);
           }
+
+          // Store user data for N8N webhooks
+          localStorage.setItem('userID', data.userid || data.userID || data.id);
+          localStorage.setItem('sessionID', data.session_id || data.sessionID);
+          localStorage.setItem('userEmail', data.email);
 
           setUser({
             ...data,
