@@ -315,7 +315,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Auth-aware fetch wrapper
+  // Auth-aware fetch wrapper (NO AUTO-RETRY for auth endpoints)
   const authenticatedFetch = async (url, options = {}) => {
     const accessToken = localStorage.getItem('access_token');
     
@@ -328,19 +328,21 @@ export const AuthProvider = ({ children }) => {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    let response = await fetch(url, {
+    const response = await fetch(url, {
       ...options,
       headers
     });
 
-    // If unauthorized and we have a refresh token, try to refresh
-    if (response.status === 401) {
+    // For auth endpoints, don't automatically retry - let user manually retry
+    // Only handle 401 for non-auth endpoints (chat, etc.)
+    if (response.status === 401 && !url.includes('/auth/')) {
+      console.log('401 on non-auth endpoint, attempting token refresh...');
       const refreshSuccess = await refreshAccessToken();
       if (refreshSuccess) {
-        // Retry with new token
+        // Retry ONCE with new token
         const newAccessToken = localStorage.getItem('access_token');
         headers['Authorization'] = `Bearer ${newAccessToken}`;
-        response = await fetch(url, {
+        return await fetch(url, {
           ...options,
           headers
         });
