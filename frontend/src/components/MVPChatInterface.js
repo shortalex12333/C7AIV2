@@ -428,10 +428,7 @@ const MVPChatInterface = () => {
           </motion.div>
         )}
 
-        {/* Session Info */}
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          Session: {sessionId}
-        </div>
+
       </div>
     </div>
   );
