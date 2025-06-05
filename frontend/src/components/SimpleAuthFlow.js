@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,8 +10,12 @@ const SimpleAuthFlow = () => {
     firstName: '',
     lastName: ''
   });
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Request deduplication
+  const pendingRequest = useRef(null);
+  const lastSubmitTime = useRef(0);
 
   const navigate = useNavigate();
   const { login, signup } = useAuth();
@@ -26,11 +30,29 @@ const SimpleAuthFlow = () => {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // Prevent duplicate submissions
+    if (isLoading || pendingRequest.current) return;
+    
+    // Debounce rapid submissions (prevent clicks within 1 second)
+    const now = Date.now();
+    if (now - lastSubmitTime.current < 1000) {
+      console.log('Request blocked - too rapid');
+      return;
+    }
+    lastSubmitTime.current = now;
+
+    setIsLoading(true);
     setError('');
 
     try {
-      const result = await login(formData.email, formData.password);
+      // Use pending request pattern to prevent duplicates
+      if (pendingRequest.current) {
+        return await pendingRequest.current;
+      }
+
+      pendingRequest.current = login(formData.email, formData.password);
+      const result = await pendingRequest.current;
 
       if (result.success) {
         navigate('/chat');
@@ -41,22 +63,41 @@ const SimpleAuthFlow = () => {
       console.error('Sign in error:', error);
       setError('An error occurred during sign in');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+      pendingRequest.current = null;
     }
   };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // Prevent duplicate submissions
+    if (isLoading || pendingRequest.current) return;
+    
+    // Debounce rapid submissions (prevent clicks within 1 second)
+    const now = Date.now();
+    if (now - lastSubmitTime.current < 1000) {
+      console.log('Request blocked - too rapid');
+      return;
+    }
+    lastSubmitTime.current = now;
+
+    setIsLoading(true);
     setError('');
 
     try {
-      const result = await signup(
+      // Use pending request pattern to prevent duplicates
+      if (pendingRequest.current) {
+        return await pendingRequest.current;
+      }
+
+      pendingRequest.current = signup(
         formData.email,
         formData.password,
         formData.firstName,
         formData.lastName
       );
+      const result = await pendingRequest.current;
 
       if (result.success) {
         navigate('/chat');
@@ -67,8 +108,23 @@ const SimpleAuthFlow = () => {
       console.error('Sign up error:', error);
       setError('An error occurred during sign up');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+      pendingRequest.current = null;
     }
+  };
+
+  const handleModeToggle = () => {
+    // Don't allow mode change during loading
+    if (isLoading) return;
+    
+    setMode(mode === 'signin' ? 'signup' : 'signin');
+    setError('');
+    setFormData({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: ''
+    });
   };
 
   return (
@@ -101,7 +157,8 @@ const SimpleAuthFlow = () => {
                 placeholder="First Name"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+                disabled={isLoading}
+                className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
               <input
@@ -110,7 +167,8 @@ const SimpleAuthFlow = () => {
                 placeholder="Last Name"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+                disabled={isLoading}
+                className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -122,7 +180,8 @@ const SimpleAuthFlow = () => {
             placeholder="Email address"
             value={formData.email}
             onChange={handleInputChange}
-            className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             required
           />
 
@@ -132,16 +191,17 @@ const SimpleAuthFlow = () => {
             placeholder="Password"
             value={formData.password}
             onChange={handleInputChange}
-            className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             required
           />
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200"
           >
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                 {mode === 'signin' ? 'Signing in...' : 'Creating account...'}
@@ -157,17 +217,9 @@ const SimpleAuthFlow = () => {
           <p className="text-gray-400">
             {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}{' '}
             <button
-              onClick={() => {
-                setMode(mode === 'signin' ? 'signup' : 'signin');
-                setError('');
-                setFormData({
-                  email: '',
-                  password: '',
-                  firstName: '',
-                  lastName: ''
-                });
-              }}
-              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+              onClick={handleModeToggle}
+              disabled={isLoading}
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
             </button>
