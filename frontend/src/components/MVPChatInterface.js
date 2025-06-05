@@ -327,15 +327,48 @@ const MVPChatInterface = () => {
                 ) : (
                   <div>
                     <p className="whitespace-pre-wrap">{message.content}</p>
+                    
+                    {/* Display pattern insight if available */}
+                    {message.pattern_insight && (
+                      <div className="mt-3 p-3 bg-white/10 rounded-lg border-l-4 border-yellow-400">
+                        <p className="text-sm font-medium text-yellow-200">💡 Pattern Insight:</p>
+                        <p className="text-sm text-yellow-100 mt-1">{message.pattern_insight}</p>
+                      </div>
+                    )}
+                    
+                    {/* Display action items if available */}
+                    {message.action_items && message.action_items.length > 0 && (
+                      <div className="mt-3 p-3 bg-white/10 rounded-lg border-l-4 border-green-400">
+                        <p className="text-sm font-medium text-green-200">📋 Action Items:</p>
+                        <ul className="text-sm text-green-100 mt-1 space-y-1">
+                          {message.action_items.map((item, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="text-green-300 mr-2">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Display strategic question if available */}
+                    {message.strategic_question && (
+                      <div className="mt-3 p-3 bg-white/10 rounded-lg border-l-4 border-blue-400">
+                        <p className="text-sm font-medium text-blue-200">🤔 Strategic Question:</p>
+                        <p className="text-sm text-blue-100 mt-1">{message.strategic_question}</p>
+                      </div>
+                    )}
+                    
+                    {/* Audio response button */}
                     {message.audio_response && (
                       <button
                         onClick={() => playAudioResponse(message.audio_response)}
-                        className="mt-2 px-3 py-1 bg-white/20 rounded-lg text-xs hover:bg-white/30 transition-colors flex items-center space-x-1"
+                        className="mt-3 px-3 py-1 bg-white/20 rounded-lg text-xs hover:bg-white/30 transition-colors flex items-center space-x-1"
                       >
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                         </svg>
-                        <span>Play Audio</span>
+                        <span>Play Audio Response</span>
                       </button>
                     )}
                   </div>
