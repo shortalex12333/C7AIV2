@@ -8,8 +8,6 @@ const App = () => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [userResponse, setUserResponse] = useState(null);
-  const [showResponse, setShowResponse] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
