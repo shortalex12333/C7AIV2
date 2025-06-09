@@ -63,7 +63,7 @@ const App = () => {
         <div className="w-full max-w-4xl mx-auto text-center">
           
           {/* Header Section */}
-          <div className="mb-8">
+          <div className="mb-8 fade-in-up">
             <h1 className="mb-4" style={{
               fontSize: '100px',
               fontFamily: 'Inter, sans-serif',
@@ -96,7 +96,7 @@ const App = () => {
           </div>
 
           {/* Email Capture Section */}
-          <div className="mb-16">
+          <div className="mb-16 fade-in-up-delay">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center items-center max-w-lg mx-auto">
               <input
                 type="email"
