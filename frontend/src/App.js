@@ -138,11 +138,11 @@ const App = () => {
           {/* Image Section */}
           <div className="relative flex justify-center">
             <img 
-              src="https://i.imgur.com/YourImageUrl.png" 
+              src="https://images.unsplash.com/photo-1634403665481-74948d815f03?w=400&h=600&fit=crop" 
               alt="For Entrepreneurs, by entrepreneurs"
-              className="max-w-md w-full h-auto"
+              className="max-w-sm w-full h-auto rounded-3xl"
               style={{
-                maxWidth: '400px',
+                maxWidth: '320px',
                 height: 'auto'
               }}
             />
