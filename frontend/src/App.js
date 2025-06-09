@@ -143,8 +143,8 @@ const App = () => {
               alt="For Entrepreneurs, by entrepreneurs"
               className="fade-in-image"
               style={{
-                width: '400px',
-                height: 'auto',
+                width: '929px',
+                height: '1252px',
                 objectFit: 'contain'
               }}
             />
