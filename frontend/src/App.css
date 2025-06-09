@@ -13,6 +13,13 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Remove extra space at bottom */
+.min-h-screen {
+  min-height: auto !important;
+  padding-bottom: 0 !important;
 }
 
 /* Premium fade-in animations */
