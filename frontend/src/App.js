@@ -117,16 +117,17 @@ const App = () => {
               <button
                 type="submit"
                 disabled={isSubmitting || !email}
-                className={`glowing-button w-full px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                className={`glowing-button w-auto px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 ${
                   isSubmitting || !email ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                 }`}
                 style={{
                   backgroundColor: '#242424',
                   color: '#f8f8ff',
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: '18px',
+                  fontSize: '16px',
                   fontWeight: 300,
-                  border: 'none'
+                  border: 'none',
+                  minWidth: '120px'
                 }}
               >
                 {isSubmitting ? 'Submitting...' : isSubmitted ? 'Submitted!' : 'Submit'}
