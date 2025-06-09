@@ -48,46 +48,32 @@ body {
   }
 }
 
-/* Glowing button effect */
+/* Outer glow button effect */
+.outer-glow-button {
+  position: relative;
+  background-color: #000000 !important;
+  color: #f8f8ff !important;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.outer-glow-button:hover {
+  box-shadow: 0 0 20px 5px rgba(72, 151, 234, 0.6);
+  transform: scale(1.05) translateY(-2px);
+}
+
+.outer-glow-button:not(:disabled):not(.opacity-50) {
+  box-shadow: 0 0 15px 3px rgba(72, 151, 234, 0.4);
+}
+
+/* Remove old glowing button styles */
 .glowing-button {
   position: relative;
   overflow: hidden;
 }
 
 .glowing-button::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, #4897ea, #96e4df, #4897ea, #96e4df);
-  border-radius: 12px;
-  opacity: 0.8;
-  z-index: -1;
-  animation: rotate 2s linear infinite;
-  background-size: 400% 400%;
-}
-
-@keyframes rotate {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.glowing-button:hover::before {
-  opacity: 1;
-}
-
-.glowing-button:hover {
-  transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 15px 30px rgba(72, 151, 234, 0.3);
+  display: none;
 }
 
 /* Custom animations */
