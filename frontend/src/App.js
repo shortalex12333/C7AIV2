@@ -18,37 +18,20 @@ const App = () => {
     setIsSubmitting(true);
     
     try {
-      // For a more professional implementation, you can create a Google Apps Script
-      // web app that accepts POST requests and writes to your sheet
-      // Here's the basic approach:
-      
-      // Method 1: Direct sheet access (current implementation)
-      const sheetUrl = 'https://docs.google.com/spreadsheets/d/1tRJZM-jH6yD-chWi-hzroXadFvCmz9fX-p0gLHghWOg/edit?gid=0#gid=0';
-      
       // Store email in localStorage for reference
       localStorage.setItem('userEmail', email);
       localStorage.setItem('submissionTime', new Date().toISOString());
       
-      // For production, you'd want to set up a Google Apps Script web app like this:
-      /*
-      const scriptUrl = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
-      const response = await fetch(scriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          timestamp: new Date().toISOString(),
-          source: 'CelesteOS Landing Page'
-        })
-      });
-      */
+      // Simulate AI response (replace with actual API call)
+      const mockResponse = {
+        message: "I need more context about your business.",
+        action: "Define your target customer.",
+        question: "What specific marketing challenge blocks you?",
+        resources: []
+      };
       
-      // For now, show success and optionally open sheet
-      console.log(`Email ${email} ready to be logged to sheet`);
-      
+      setUserResponse(mockResponse);
+      setShowResponse(true);
       setIsSubmitted(true);
       setEmail('');
       
