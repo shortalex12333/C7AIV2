@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import './App.css';
 
+// Import Inter font
+const interFont = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');`;
+
 const App = () => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
