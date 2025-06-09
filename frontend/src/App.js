@@ -138,9 +138,9 @@ const App = () => {
           {/* Image Section */}
           <div className="relative flex justify-center">
             <img 
-              src="https://images.unsplash.com/photo-1634403665481-74948d815f03?w=400&h=600&fit=crop" 
+              src="https://image.typedream.com/cdn-cgi/image/width=3840,format=auto,fit=scale-down,quality=100/https://api.typedream.com/v0/document/public/1f70f13f-def2-4931-9d3f-06557643723a/2xzinfwSsGaBtpj8XDboGDSSa6b_iphone8.png" 
               alt="For Entrepreneurs, by entrepreneurs"
-              className="max-w-sm w-full h-auto rounded-3xl"
+              className="max-w-sm w-full h-auto"
               style={{
                 maxWidth: '320px',
                 height: 'auto'
