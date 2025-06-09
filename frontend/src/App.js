@@ -102,14 +102,14 @@ const App = () => {
 
           {/* Email Capture Section */}
           <div className="mb-16">
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center items-center max-w-lg mx-auto">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Get early access"
                 required
-                className="w-full sm:flex-1 px-6 py-4 border border-gray-600 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                className="w-full px-6 py-4 border border-gray-600 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                 style={{
                   backgroundColor: '#2a2a2a',
                   color: '#f8f8ff',
@@ -122,7 +122,7 @@ const App = () => {
               <button
                 type="submit"
                 disabled={isSubmitting || !email}
-                className={`glowing-button w-full sm:w-auto px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                className={`glowing-button w-full px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 ${
                   isSubmitting || !email ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                 }`}
                 style={{
@@ -139,66 +139,17 @@ const App = () => {
             </form>
           </div>
 
-          {/* iPhone Mockup Section */}
+          {/* Image Section */}
           <div className="relative flex justify-center">
-            <div className="relative">
-              {/* iPhone Frame */}
-              <div className="relative w-80 h-[640px] bg-black rounded-[60px] p-2 shadow-2xl">
-                <div className="w-full h-full rounded-[50px] overflow-hidden relative" style={{backgroundColor: '#181818'}}>
-                  
-                  {/* iPhone Screen Content */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-                    
-                    {/* Text on Phone Screen */}
-                    <div className="mb-16">
-                      <h2 style={{
-                        color: '#f8f8ff',
-                        fontSize: '24px',
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: 600,
-                        lineHeight: '1.3',
-                        marginBottom: '8px'
-                      }}>
-                        For Entrepreneurs,
-                      </h2>
-                      <h2 style={{
-                        color: '#f8f8ff',
-                        fontSize: '24px',
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: 600,
-                        lineHeight: '1.3'
-                      }}>
-                        by entrepreneurs.
-                      </h2>
-                    </div>
-
-                    {/* Puzzle Logo - Simple two pieces */}
-                    <div className="relative">
-                      <svg width="120" height="120" viewBox="0 0 120 120" className="drop-shadow-lg">
-                        {/* Left puzzle piece */}
-                        <path 
-                          d="M10 20 C10 15 15 10 20 10 L40 10 C45 10 50 15 50 20 L50 40 C55 40 60 45 60 50 C60 55 55 60 50 60 L50 80 C50 85 55 90 60 90 C65 90 70 85 70 80 L70 60 C70 55 75 50 80 50 C85 50 90 55 90 60 L90 80 C90 95 85 100 80 100 L20 100 C15 100 10 95 10 80 Z" 
-                          fill="#7dd3fc"
-                        />
-                        
-                        {/* Right puzzle piece */}
-                        <path 
-                          d="M50 20 C50 15 55 10 60 10 L100 10 C105 10 110 15 110 20 L110 80 C110 95 105 100 100 100 L60 100 C55 100 50 95 50 80 L50 60 C45 60 40 55 40 50 C40 45 45 40 50 40 L50 20 Z" 
-                          fill="#7dd3fc"
-                        />
-                      </svg>
-                    </div>
-
-                  </div>
-
-                  {/* iPhone Notch */}
-                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-black rounded-full"></div>
-                  
-                  {/* Home Indicator */}
-                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gray-600 rounded-full"></div>
-                </div>
-              </div>
-            </div>
+            <img 
+              src="https://i.imgur.com/YourImageUrl.png" 
+              alt="For Entrepreneurs, by entrepreneurs"
+              className="max-w-md w-full h-auto"
+              style={{
+                maxWidth: '400px',
+                height: 'auto'
+              }}
+            />
           </div>
 
         </div>
