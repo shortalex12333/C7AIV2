@@ -140,10 +140,11 @@ const App = () => {
             <img 
               src="https://image.typedream.com/cdn-cgi/image/width=3840,format=auto,fit=scale-down,quality=100/https://api.typedream.com/v0/document/public/1f70f13f-def2-4931-9d3f-06557643723a/2xzinfwSsGaBtpj8XDboGDSSa6b_iphone8.png" 
               alt="For Entrepreneurs, by entrepreneurs"
-              className="max-w-sm w-full h-auto"
+              className="fade-in-image"
               style={{
-                maxWidth: '320px',
-                height: 'auto'
+                width: '927px',
+                height: '1257px',
+                objectFit: 'contain'
               }}
             />
           </div>
