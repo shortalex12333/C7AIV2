@@ -30,14 +30,21 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Body styling to match exact background */
+body {
+  background-color: #181818;
+  margin: 0;
+  padding: 0;
+}
+
 /* Enhanced focus states */
 input:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.2);
 }
 
 /* Button hover effects */
 button:hover {
-  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* iPhone mockup enhancements */
@@ -52,9 +59,22 @@ button:hover {
   }
 }
 
-/* Typography improvements */
+/* Typography improvements to match exact font */
 h1, h2 {
   letter-spacing: -0.02em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+}
+
+/* Placeholder styling */
+input::placeholder {
+  color: #a0a0a0;
+  opacity: 1;
+}
+
+/* Custom input styling */
+input[type="email"] {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
 /* Loading animation */
@@ -69,4 +89,18 @@ h1, h2 {
 
 .loading {
   animation: spin 1s linear infinite;
+}
+
+/* Exact color overrides */
+.exact-white {
+  color: #f8f8ff !important;
+}
+
+.exact-bg {
+  background-color: #181818 !important;
+}
+
+.exact-button {
+  background-color: #000000 !important;
+  color: #f8f8ff !important;
 }
