@@ -20,16 +20,28 @@ const App = () => {
       localStorage.setItem('userEmail', email);
       localStorage.setItem('submissionTime', new Date().toISOString());
       
-      // Simulate AI response (replace with actual API call)
-      const mockResponse = {
-        message: "I need more context about your business.",
-        action: "Define your target customer.",
-        question: "What specific marketing challenge blocks you?",
-        resources: []
-      };
+      // For Google Sheets integration, you would create a Google Apps Script web app
+      // and use it like this:
+      /*
+      const response = await fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          timestamp: new Date().toISOString(),
+          source: 'CelesteOS Landing Page'
+        })
+      });
+      */
       
-      setUserResponse(mockResponse);
-      setShowResponse(true);
+      // For now, log the email and open the sheet
+      console.log(`Email ${email} ready to be logged to Google Sheets`);
+      const sheetUrl = 'https://docs.google.com/spreadsheets/d/1tRJZM-jH6yD-chWi-hzroXadFvCmz9fX-p0gLHghWOg/edit?gid=0#gid=0';
+      window.open(sheetUrl, '_blank');
+      
       setIsSubmitted(true);
       setEmail('');
       
