@@ -59,12 +59,12 @@ const App = () => {
   return (
     <>
       <style>{interFont}</style>
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{backgroundColor: '#181818'}}>
-        <div className="w-full max-w-4xl mx-auto text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16" style={{backgroundColor: '#181818'}}>
+        <div className="w-full max-w-2xl mx-auto text-center">
           
           {/* Header Section */}
-          <div className="mb-8 fade-in-up">
-            <h1 className="mb-4" style={{
+          <div className="mb-12 fade-in-up">
+            <h1 className="mb-6" style={{
               fontSize: '100px',
               fontFamily: 'Inter, sans-serif',
               fontWeight: 600,
@@ -84,7 +84,8 @@ const App = () => {
               fontFamily: 'Inter, sans-serif',
               fontWeight: 300,
               color: '#f8f8ff',
-              lineHeight: '1.4'
+              lineHeight: '1.4',
+              marginBottom: '0'
             }}>
               Your <span style={{
                 background: 'linear-gradient(135deg, #4897ea 0%, #96e4df 100%)',
@@ -97,7 +98,7 @@ const App = () => {
 
           {/* Email Capture Section */}
           <div className="mb-16 fade-in-up-delay">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center items-center max-w-lg mx-auto">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center items-center max-w-md mx-auto">
               <input
                 type="email"
                 value={email}
@@ -117,11 +118,11 @@ const App = () => {
               <button
                 type="submit"
                 disabled={isSubmitting || !email}
-                className={`glowing-button w-auto px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 ${
-                  isSubmitting || !email ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                className={`outer-glow-button w-auto px-6 py-3 rounded-lg transition-all duration-200 ${
+                  isSubmitting || !email ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'
                 }`}
                 style={{
-                  backgroundColor: '#242424',
+                  backgroundColor: '#000000',
                   color: '#f8f8ff',
                   fontFamily: 'Inter, sans-serif',
                   fontSize: '16px',
@@ -136,14 +137,14 @@ const App = () => {
           </div>
 
           {/* Image Section */}
-          <div className="relative flex justify-center">
+          <div className="relative flex justify-center pb-0">
             <img 
               src="https://image.typedream.com/cdn-cgi/image/width=3840,format=auto,fit=scale-down,quality=100/https://api.typedream.com/v0/document/public/1f70f13f-def2-4931-9d3f-06557643723a/2xzinfwSsGaBtpj8XDboGDSSa6b_iphone8.png" 
               alt="For Entrepreneurs, by entrepreneurs"
               className="fade-in-image"
               style={{
-                width: '927px',
-                height: '1257px',
+                width: '400px',
+                height: 'auto',
                 objectFit: 'contain'
               }}
             />
