@@ -124,6 +124,81 @@ const App = () => {
             </form>
           </div>
 
+          {/* AI Response Section */}
+          {showResponse && userResponse && (
+            <div className="mb-16 max-w-2xl mx-auto">
+              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 text-left">
+                <div className="space-y-4">
+                  {/* Message */}
+                  <div>
+                    <p style={{
+                      color: '#f8f8ff',
+                      fontSize: '16px',
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 400,
+                      lineHeight: '1.5'
+                    }}>
+                      {userResponse.message}
+                    </p>
+                  </div>
+                  
+                  {/* Action */}
+                  <div>
+                    <p style={{
+                      color: '#4897ea',
+                      fontSize: '16px',
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 500,
+                      lineHeight: '1.5'
+                    }}>
+                      {userResponse.action}
+                    </p>
+                  </div>
+                  
+                  {/* Question */}
+                  <div>
+                    <p style={{
+                      color: '#96e4df',
+                      fontSize: '16px',
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 400,
+                      lineHeight: '1.5'
+                    }}>
+                      {userResponse.question}
+                    </p>
+                  </div>
+                  
+                  {/* Resources (if any) */}
+                  {userResponse.resources && userResponse.resources.length > 0 && (
+                    <div>
+                      <h4 style={{
+                        color: '#f8f8ff',
+                        fontSize: '14px',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 600,
+                        marginBottom: '8px'
+                      }}>
+                        Resources:
+                      </h4>
+                      <ul className="space-y-2">
+                        {userResponse.resources.map((resource, index) => (
+                          <li key={index} style={{
+                            color: '#a0a0a0',
+                            fontSize: '14px',
+                            fontFamily: 'Inter, sans-serif',
+                            fontWeight: 300
+                          }}>
+                            {resource}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Image Section */}
           <div className="relative flex justify-center">
             <img 
