@@ -97,7 +97,7 @@ const App = () => {
           </div>
 
           {/* Email Capture Section */}
-          <div className="mb-16 fade-in-up-delay">
+          <div className="mb-8 fade-in-up-delay">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center items-center max-w-md mx-auto">
               <input
                 type="email"
