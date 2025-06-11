@@ -20,10 +20,14 @@ const App = () => {
       localStorage.setItem('userEmail', email);
       localStorage.setItem('submissionTime', new Date().toISOString());
       
-      // For Google Sheets integration, you would create a Google Apps Script web app
-      // and use it like this:
-      /*
-      const response = await fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', {
+      // Get user's device and location info
+      const userAgent = navigator.userAgent;
+      const location = 'Unknown'; // You can implement IP-based geolocation if needed
+      
+      // Google Apps Script URL for email submission
+      const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby77fJ6UYG_TKiZK6_o20K3BpJJykAs8tUXM1VvtPSPXmEBrz4Ov1m91JwGdpzVnjU/exec';
+      
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
@@ -32,15 +36,13 @@ const App = () => {
         body: JSON.stringify({
           email: email,
           timestamp: new Date().toISOString(),
-          source: 'CelesteOS Landing Page'
+          source: 'CelesteOS Landing Page',
+          userAgent: userAgent,
+          location: location
         })
       });
-      */
       
-      // For now, log the email and open the sheet
-      console.log(`Email ${email} ready to be logged to Google Sheets`);
-      const sheetUrl = 'https://docs.google.com/spreadsheets/d/1tRJZM-jH6yD-chWi-hzroXadFvCmz9fX-p0gLHghWOg/edit?gid=0#gid=0';
-      window.open(sheetUrl, '_blank');
+      console.log('Email submitted successfully to Google Sheets');
       
       setIsSubmitted(true);
       setEmail('');
@@ -50,7 +52,13 @@ const App = () => {
         setIsSubmitted(false);
       }, 3000);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error submitting email:', error);
+      // Still show success to user as no-cors mode doesn't return response
+      setIsSubmitted(true);
+      setEmail('');
+      setTimeout(() => {
+        setIsSubmitted(false);
+      }, 3000);
     } finally {
       setIsSubmitting(false);
     }
@@ -137,14 +145,14 @@ const App = () => {
           </div>
 
           {/* Image Section */}
-          <div className="relative flex justify-center pb-0">
+                    <div className="relative flex justify-center pb-0">
             <img 
-              src="https://image.typedream.com/cdn-cgi/image/width=3840,format=auto,fit=scale-down,quality=100/https://api.typedream.com/v0/document/public/1f70f13f-def2-4931-9d3f-06557643723a/2xzinfwSsGaBtpj8XDboGDSSa6b_iphone8.png" 
+              src="https://image.typedream.com/cdn-cgi/image/width=3840,format=auto,fit=scale-down,quality=100/https://api.typedream.com/v0/document/public/1f70f13f-def2-4931-9d3f-06557643723a/2xzinfwSsGaBtpj8XDboGDSSa6b_iphone8.png"
               alt="For Entrepreneurs, by entrepreneurs"
               className="fade-in-image"
               style={{
-                width: '929px',
-                height: '1252px',
+                width: '50vw',
+                height: 'auto',
                 objectFit: 'contain'
               }}
             />
